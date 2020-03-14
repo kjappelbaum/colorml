@@ -47,7 +47,7 @@ def main(submit=False):
 
                 if submit:
                     subprocess.call(
-                        "sbatch {}".format("{}.slurm".format(slurmfile)),
+                        "sbatch {}".format("{}".format(slurmfile)),
                         shell=True,
                         cwd=BASEFOLDER,
                     )
