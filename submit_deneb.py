@@ -75,7 +75,7 @@ def write_config_file(basename, scaler, activation, architecture):
     with open(outname, "w",) as outfile:
         yaml.dump(config, outfile)
 
-    return outfile
+    return outname
 
 
 if __name__ == "__main__":
