@@ -59,7 +59,7 @@ def write_submission_script(configfile, basename):
     submission = SUBMISSION.format(configfile)
     slurmfile = os.path.join(BASEFOLDER, basename + ".slurm")
     with open(slurmfile, "w") as fh:
-        fh.write(slurmfile)
+        fh.write(submission)
     return slurmfile
 
 
