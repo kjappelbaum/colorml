@@ -7,8 +7,7 @@ import ruamel.yaml as yaml
 from colorml.utils import parse_config, get_timestamp_string
 
 BASEFOLDER = "/scratch/kjablonk/colorml/colorml"
-SUBMISSION = """
-#!/bin/bash -l
+SUBMISSION = """#!/bin/bash -l
 #SBATCH --nodes=1
 #SBATCH --time=10:00:0
 #SBATCH --qos=gpu
