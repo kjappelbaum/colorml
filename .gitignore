@@ -378,3 +378,5 @@ tags
 .renku.lock
 .renku/tmp
 .renku/cache
+
+*.pdf
