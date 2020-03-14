@@ -49,7 +49,7 @@ def main(submit=False):
                     subprocess.call(
                         "sbatch {}".format("{}.slurm".format(slurmfile)),
                         shell=True,
-                        cwd=basename,
+                        cwd=BASEFOLDER,
                     )
                     time.sleep(2)
 
