@@ -1,5 +1,6 @@
 import os
 import time
+import click
 import subprocess
 from pathlib import Path
 import ruamel.yaml as yaml
@@ -33,6 +34,8 @@ architectures = [
 ]
 
 
+@click.command("cli")
+@click.option("--submit", is_flag=True)
 def main(submit=False):
     for i, scaler in enumerate(scalers):
         for j, activation in enumerate(activations):
@@ -73,3 +76,7 @@ def write_config_file(basename, scaler, activation, architecture):
         yaml.dump(config, outfile)
 
     return outfile
+
+
+if __name__ == "__main__":
+    main()
