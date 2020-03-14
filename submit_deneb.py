@@ -40,7 +40,7 @@ def main(submit=False):
     for i, scaler in enumerate(scalers):
         for j, activation in enumerate(activations):
             for k, architecture in enumerate(architectures):
-                basename = "_".join([get_timestamp_string(), i, j, k])
+                basename = "_".join([get_timestamp_string(), str(i), str(j), str(k)])
                 configfile = write_config_file(
                     basename, scaler, activation, architecture
                 )
