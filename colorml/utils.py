@@ -158,7 +158,7 @@ def plot_predictions(predictions, labels, names, sample=100, outname=None):
         fig.savefig(outname, bbox_inches="tight")
 
 
-def flatten(d, parent_key='', sep='_'):
+def flatten(d, parent_key="", sep="_"):
     items = []
     for k, v in d.items():
         new_key = parent_key + sep + k if parent_key else k
