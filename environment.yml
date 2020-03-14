@@ -6,11 +6,9 @@ dependencies:
   - black=19.10b0
   - click=7.0
   - pandas=1.0.1
-  - pandoc=2.2.3.2=0
-  - python=3.7.6=h359304d_2
-  - scikit-learn=0.22.1=py37h27c97d8_0
-  - scipy=1.4.1=py37h9fa6033_0
-  - yaml=0.1.7=hc338f04_2
+  - python=3.7.6
+  - scikit-learn=0.22
+  - scipy=1.4.1
   - pip:
       - comet-ml==3.1.2
       - keras==2.3.1
