@@ -20,7 +20,7 @@ SUBMISSION = """
 slmodules -s x86_E5v2_Mellanox_GPU
 module load gcc cuda cudnn mvapich2 openblas
 source ~/anaconda3/bin/activate colorml
-srun python -m colorml.run_training {}
+srun python -m colorml.run_training {submission}
 """
 
 scalers = ["standard", "minmax"]
@@ -56,7 +56,7 @@ def main(submit=False):
 
 
 def write_submission_script(configfile, basename):
-    submission = SUBMISSION.format(str(configfile))
+    submission = SUBMISSION.format(submission=str(configfile))
     slurmfile = os.path.join(BASEFOLDER, basename + ".slurm")
     with open(slurmfile, "w") as fh:
         fh.write(submission)
