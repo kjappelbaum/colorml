@@ -26,6 +26,8 @@ def orchestrate(config):
     logger.setLevel(logging.DEBUG)
     experiment = Experiment(project_name="color-ml")
     experiment.log_parameters(flatten(config))
+    experiment.log_asset(config["data"])
+
     seed(int(config["seed"]))
 
     make_if_not_exists(config["outpath"])
@@ -41,6 +43,7 @@ def orchestrate(config):
 
     if config["augmentation"]["enabled"]:
         augment_dict = read_pickle(config["augmentation"]["augmentation_dict"])
+        experiment.log_asset(config["augmentation"]["augmentation_dict"])
         df_train = augment_data(df_train, augment_dict)
 
     features = select_features(config["features"])
@@ -66,6 +69,8 @@ def orchestrate(config):
     y_test = y_test.values
 
     joblib.dump(scaler, os.path.join(config["outpath"], "scaler.joblib"))
+    experiment.log_asset(os.path.join(config["outpath"], "scaler.joblib"))
+
     X_test, X_valid, y_test, y_valid = train_test_split(
         X_test, y_test, train_size=config["valid_size"]
     )
@@ -102,6 +107,7 @@ def orchestrate(config):
     )
 
     joblib.dump(scaler, os.path.join(config["outpath"], "model.joblib"))
+    experiment.log_asset(os.path.join(config["outpath"], "model.joblib"))
 
     train_performance = measure_performance(model, X_train, y_train)
     experiment.log_metrics(train_performance, prefix="train")
