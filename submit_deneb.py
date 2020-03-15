@@ -4,7 +4,7 @@ import click
 import subprocess
 from pathlib import Path
 import ruamel.yaml as yaml
-from colorml.utils import parse_config, get_timestamp_string
+from colorml.utils import parse_config, get_timestamp_string, make_if_not_exists
 
 BASEFOLDER = "/scratch/kjablonk/colorml/colorml"
 SUBMISSION = """#!/bin/bash -l
@@ -25,9 +25,10 @@ srun python -m colorml.run_training {submission}
 scalers = ["standard", "minmax"]
 activations = ["relu", "selu"]
 architectures = [
+    ([64, 32, 16], [16, 8, 4, 3]),
     ([64, 32, 8], [8, 4, 3]),
     ([128, 32, 16], [16, 8, 3]),
-    ([64, 64, 8], [8, 4, 3])
+    ([64, 64, 8], [8, 4, 3]),
 ]
 
 
@@ -68,6 +69,9 @@ def write_config_file(basename, scaler, activation, architecture):
     config["model"]["activation_function"] = activation
     config["model"]["units"] = architecture[0]
     config["model"]["head_units"] = architecture[1]
+    outpath = os.path.join(BASEFOLDER, "results", "models", basename)
+    make_if_not_exists(outpath)
+    config["outpath"] = outpath
     outname = os.path.join(BASEFOLDER, "models/models/", basename + ".yaml")
     with open(outname, "w",) as outfile:
         yaml.dump(config, outfile)
