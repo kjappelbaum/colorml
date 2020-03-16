@@ -138,10 +138,7 @@ def train_model(
         if cycling_lr:
             logger.info("Will use cycling learning rate")
             cycling_learning_rate = tfa.optimizers.Triangular2CyclicalLearningRate(
-                initial_learning_rate=1e-4,
-                maximal_learning_rate=1e-2,
-                step_size=2000,
-                scale_fn=lambda x: 1.0,
+                initial_learning_rate=1e-4, maximal_learning_rate=1e-2, step_size=2000,
             )
             callbacks.append(cycling_learning_rate)
         model.fit(
