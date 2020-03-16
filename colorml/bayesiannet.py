@@ -103,6 +103,7 @@ def train_model(
     lr: float = None,
     epochs: int = 200,
     batch_size: int = 268,
+    cycling_lr: bool = False,
 ):
     with experiment.train():
         seed(random_seed)
@@ -134,6 +135,10 @@ def train_model(
             )
             callbacks.append(early_stopping)
 
+        if cycling_lr:
+            logger.info("Will use cycling learning rate")
+            cycling_learning_rate = tfa.optimizers.Triangular2CyclicalLearningRate()
+            callbacks.append(cycling_learning_rate)
         model.fit(
             X_train,
             y_train,

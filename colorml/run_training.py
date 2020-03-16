@@ -89,6 +89,11 @@ def orchestrate(config):
     else:
         lr = None
 
+    if config["training"]["cycling_lr"]:
+        cycling_lr = True
+    else:
+        cycling_lr = False
+
     logger.info("Built model.")
     logger.info(f"Head units: {config['model']['head_units']}")
     logger.info(f"Head units: {config['model']['units']}")
@@ -104,6 +109,7 @@ def orchestrate(config):
         lr=lr,
         epochs=int(config["training"]["epochs"]),
         batch_size=int(config["training"]["batch_size"]),
+        cycling_lr=cycling_lr
     )
 
     joblib.dump(scaler, os.path.join(config["outpath"], "model.joblib"))
