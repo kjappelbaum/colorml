@@ -105,15 +105,15 @@ def orchestrate(config, configfile):
     logger.info(f"Head units: {config['model']['head_units']}")
     logger.info(f"Head units: {config['model']['units']}")
 
-    experiment.log_asset_data(
-        (X_train, y_train), metadata={"split": "train", "scaled": True}
-    )
-    experiment.log_asset_data(
-        (X_valid, y_valid), metadata={"split": "valid", "scaled": True}
-    )
-    experiment.log_asset_data(
-        (X_test, y_test), metadata={"split": "test", "scaled": True}
-    )
+    # experiment.log_asset_data(
+    #     (X_train, y_train), metadata={"split": "train", "scaled": True}
+    # )
+    # experiment.log_asset_data(
+    #     (X_valid, y_valid), metadata={"split": "valid", "scaled": True}
+    # )
+    # experiment.log_asset_data(
+    #     (X_test, y_test), metadata={"split": "test", "scaled": True}
+    # )
 
     model = train_model(
         experiment,
