@@ -25,3 +25,4 @@ dependencies:
       - psycopg2==2.8.4
       - colour-science==0.3.15
       - xgboost==1.0.2
+      - dill==0.3
