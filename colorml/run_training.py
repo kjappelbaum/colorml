@@ -128,7 +128,7 @@ def orchestrate(config, configfile):
         cycling_lr=cycling_lr,
     )
 
-    joblib.dump(scaler, os.path.join(config["outpath"], "model.joblib"))
+    joblib.dump(model, os.path.join(config["outpath"], "model.joblib"))
     experiment.log_asset(os.path.join(config["outpath"], "model.joblib"))
 
     train_performance = measure_performance(model, X_train, y_train)
