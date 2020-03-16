@@ -16,14 +16,13 @@ SUBMISSION = """#!/bin/bash -l
 #SBATCH --cpus-per-task=1
 #SBATCH --partition=gpu
 
-slmodules -s x86_E5v2_Mellanox_GPU
 module load gcc cuda cudnn mvapich2 openblas
 source ~/anaconda3/bin/activate colorml
 srun python -m colorml.run_training {submission}
 """
 
-scalers = ["minmax"]
-activations = ["relu"]
+scalers = ["minmax", "standard"]
+activations = ["relu", "selu", "elu"]
 architectures = [
     ([64, 8, 8], [8, 8, 3]),
     ([64, 8], [8, 8, 8, 3]),
