@@ -9,7 +9,7 @@ from colorml.utils import parse_config, get_timestamp_string, make_if_not_exists
 BASEFOLDER = "/scratch/kjablonk/colorml/colorml"
 SUBMISSION = """#!/bin/bash -l
 #SBATCH --nodes=1
-#SBATCH --time=10:00:0
+#SBATCH --time=5:00:0
 #SBATCH --qos=gpu
 #SBATCH --gres=gpu:1
 #SBATCH --ntasks-per-node=1
