@@ -41,7 +41,7 @@ def orchestrate(config, configfile):
     df = pd.read_csv(config["data"])
 
     df_train, df_test = train_test_split(
-        df, train_size=config["train_size"], random_seed=int(config["seed"])
+        df, train_size=config["train_size"], random_state=int(config["seed"])
     )
 
     if config["augmentation"]["enabled"]:
@@ -75,7 +75,10 @@ def orchestrate(config, configfile):
     experiment.log_asset(os.path.join(config["outpath"], "scaler.joblib"))
 
     X_test, X_valid, y_test, y_valid = train_test_split(
-        X_test, y_test, train_size=config["valid_size"], random_seed=int(config["seed"])
+        X_test,
+        y_test,
+        train_size=config["valid_size"],
+        random_state=int(config["seed"]),
     )
 
     config["model"]["units"].insert(0, X_train.shape[1])
