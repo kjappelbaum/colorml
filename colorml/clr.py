@@ -104,8 +104,8 @@ def cyclic_learning_rate(
     a2 = np.subtract(max_lr, learning_rate)
     clr = np.multiply(a1, a2)
     if mode == "triangular2":
-        clr = np.divide(clr, float(np.pow(2, int(cycle - 1))),)
+        clr = np.divide(clr, float(np.power(2, int(cycle - 1))),)
     if mode == "exp_range":
-        clr = np.multiply(np.pow(gamma, global_step), clr)
+        clr = np.multiply(np.power(gamma, global_step), clr)
     return np.add(clr, learning_rate)
 
