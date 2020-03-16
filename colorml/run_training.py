@@ -3,6 +3,7 @@ import click
 import comet_ml
 import os
 import dill
+import pickle
 from comet_ml import Experiment
 from .utils import (
     parse_config,
