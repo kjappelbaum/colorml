@@ -2,6 +2,7 @@
 import click
 import comet_ml
 import os
+import dill
 from comet_ml import Experiment
 from .utils import (
     parse_config,
@@ -128,7 +129,9 @@ def orchestrate(config, configfile):
         cycling_lr=cycling_lr,
     )
 
-    joblib.dump(model, os.path.join(config["outpath"], "model.joblib"))
+    with open(os.path.join(config["outpath"], "model.joblib"), "wb") as fh:
+        pickle.dump(model, fh)
+
     experiment.log_asset(os.path.join(config["outpath"], "model.joblib"))
 
     train_performance = measure_performance(model, X_train, y_train)
