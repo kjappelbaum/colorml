@@ -22,15 +22,13 @@ source ~/anaconda3/bin/activate colorml
 srun python -m colorml.run_training {submission}
 """
 
-scalers = ["standard", "minmax"]
+scalers = ["minmax"]
 activations = ["relu"]
 architectures = [
-    ([64, 32, 16], [16, 8, 4, 3]),
-    ([64, 64, 8], [8, 4, 3]),
-    ([128, 32, 8], [8, 4, 3]),
-    ([128, 32, 16], [16, 4, 3]),
-    ([128, 32, 16], [16, 8, 3]),
     ([64, 8, 8], [8, 8, 3]),
+    ([64, 8], [8, 8, 8, 3]),
+    ([64, 16], [16, 8, 8, 3]),
+    ([64, 16], [16, 8, 3]),
 ]
 
 
