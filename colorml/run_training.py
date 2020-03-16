@@ -130,10 +130,10 @@ def orchestrate(config, configfile):
         cycling_lr=cycling_lr,
     )
 
-    with open(os.path.join(config["outpath"], "model.joblib"), "wb") as fh:
-        pickle.dump(model, fh)
+    with open(os.path.join(config["outpath"], "model.dill"), "wb") as fh:
+        dill.dump(model, fh)
 
-    experiment.log_asset(os.path.join(config["outpath"], "model.joblib"))
+    experiment.log_asset(os.path.join(config["outpath"], "model.dill"))
 
     train_performance = measure_performance(model, X_train, y_train)
     experiment.log_metrics(train_performance, prefix="train")
