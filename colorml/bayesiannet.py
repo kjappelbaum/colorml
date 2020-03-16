@@ -3,6 +3,7 @@ import tensorflow as tf
 import tensorflow_addons as tfa
 import probflow as pf
 from .utils import mapping_to_target_range
+from .clr import cyclic_learning_rate
 from probflow.callbacks import (
     MonitorMetric,
     MonitorELBO,
@@ -137,9 +138,7 @@ def train_model(
 
         if cycling_lr:
             logger.info("Will use cycling learning rate")
-            cycling_learning_rate = tfa.optimizers.Triangular2CyclicalLearningRate(
-                initial_learning_rate=1e-4, maximal_learning_rate=1e-2, step_size=2000,
-            )
+            cycling_learning_rate = LearningRateScheduler(cyclic_learning_rate)
             callbacks.append(cycling_learning_rate)
         model.fit(
             X_train,
@@ -161,3 +160,4 @@ def measure_performance(model, X, y_true):
         "mae": mae,
         "mse": mse,
     }
+

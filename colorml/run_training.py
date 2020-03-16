@@ -21,10 +21,11 @@ from .descriptornames import *
 import logging
 
 
-def orchestrate(config):
+def orchestrate(config, configfile):
     logger = logging.getLogger("bayesnet")
     logger.setLevel(logging.DEBUG)
     experiment = Experiment(project_name="color-ml")
+    experiment.log_asset(configfile)
     experiment.log_parameters(flatten(config))
     experiment.log_asset(config["data"])
 
@@ -109,7 +110,7 @@ def orchestrate(config):
         lr=lr,
         epochs=int(config["training"]["epochs"]),
         batch_size=int(config["training"]["batch_size"]),
-        cycling_lr=cycling_lr
+        cycling_lr=cycling_lr,
     )
 
     joblib.dump(scaler, os.path.join(config["outpath"], "model.joblib"))
@@ -129,7 +130,7 @@ def orchestrate(config):
 @click.argument("path")
 def main(path):
     config = parse_config(path)
-    orchestrate(config)
+    orchestrate(config, path)
 
 
 if __name__ == "__main__":
