@@ -90,24 +90,22 @@ def cyclic_learning_rate(
     if global_step is None:
         raise ValueError("global_step is required for cyclic_learning_rate.")
 
-    def cyclic_lr():
-        """Helper to recompute learning rate; most helpful in eager-mode."""
-        # computing: cycle = floor( 1 + global_step / ( 2 * step_size ) )
-        double_step = np.multiply(2.0, step_size)
-        global_div_double_step = np.divide(global_step, double_step)
-        cycle = np.floor(np.add(1.0, global_div_double_step))
-        # computing: x = abs( global_step / step_size – 2 * cycle + 1 )
-        double_cycle = np.multiply(2.0, cycle)
-        global_div_step = np.divide(global_step, step_size)
-        tmp = np.subtract(global_div_step, double_cycle)
-        x = np.abs(np.add(1.0, tmp))
-        # computing: clr = learning_rate + ( max_lr – learning_rate ) * max( 0, 1 - x )
-        a1 = np.maximum(0.0, np.subtract(1.0, x))
-        a2 = np.subtract(max_lr, learning_rate)
-        clr = np.multiply(a1, a2)
-        if mode == "triangular2":
-            clr = np.divide(clr, float(np.pow(2, int(cycle - 1))),)
-        if mode == "exp_range":
-            clr = np.multiply(np.pow(gamma, global_step), clr)
-        return np.add(clr, learning_rate)
+    # computing: cycle = floor( 1 + global_step / ( 2 * step_size ) )
+    double_step = np.multiply(2.0, step_size)
+    global_div_double_step = np.divide(global_step, double_step)
+    cycle = np.floor(np.add(1.0, global_div_double_step))
+    # computing: x = abs( global_step / step_size – 2 * cycle + 1 )
+    double_cycle = np.multiply(2.0, cycle)
+    global_div_step = np.divide(global_step, step_size)
+    tmp = np.subtract(global_div_step, double_cycle)
+    x = np.abs(np.add(1.0, tmp))
+    # computing: clr = learning_rate + ( max_lr – learning_rate ) * max( 0, 1 - x )
+    a1 = np.maximum(0.0, np.subtract(1.0, x))
+    a2 = np.subtract(max_lr, learning_rate)
+    clr = np.multiply(a1, a2)
+    if mode == "triangular2":
+        clr = np.divide(clr, float(np.pow(2, int(cycle - 1))),)
+    if mode == "exp_range":
+        clr = np.multiply(np.pow(gamma, global_step), clr)
+    return np.add(clr, learning_rate)
 
