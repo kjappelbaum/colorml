@@ -4,11 +4,13 @@ import tensorflow_addons as tfa
 import probflow as pf
 from .utils import mapping_to_target_range
 from .clr import cyclic_learning_rate
+from .kl_anneal import montonical_anneal
 from probflow.callbacks import (
     MonitorMetric,
     MonitorELBO,
     EarlyStopping,
     LearningRateScheduler,
+    KLWeightScheduler,
 )
 from numpy.random import seed
 from comet_ml import Experiment
@@ -105,6 +107,7 @@ def train_model(
     epochs: int = 200,
     batch_size: int = 268,
     cycling_lr: bool = False,
+    kl_annealing: bool = True,
 ):
     with experiment.train():
         seed(random_seed)
@@ -140,6 +143,12 @@ def train_model(
             logger.info("Will use cycling learning rate")
             cycling_learning_rate = LearningRateScheduler(cyclic_learning_rate)
             callbacks.append(cycling_learning_rate)
+
+        if kl_annealing:
+            logger.info("Will use KL annealing")
+            kl_annealer = KLWeightScheduler(montonical_anneal)
+            callbacks.append(montonical_anneal)
+
         model.fit(
             X_train,
             y_train,
@@ -155,6 +164,9 @@ def train_model(
 def measure_performance(model, X, y_true):
     mae = model.metric("mae", X, y_true)
     mse = model.metric("mse", X, y_true)
+    prediction = model.predict(X)
+
+    stdev = prediction.std()
 
     return {
         "mae": mae,

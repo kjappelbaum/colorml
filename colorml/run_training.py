@@ -102,6 +102,11 @@ def orchestrate(config, configfile):
     else:
         cycling_lr = False
 
+    if config["training"]["kl_annealing"]:
+        kl_annealing = True
+    else:
+        kl_annealing = False
+
     logger.info("Built model.")
     logger.info(f"Head units: {config['model']['head_units']}")
     logger.info(f"Head units: {config['model']['units']}")
@@ -128,6 +133,7 @@ def orchestrate(config, configfile):
         epochs=int(config["training"]["epochs"]),
         batch_size=int(config["training"]["batch_size"]),
         cycling_lr=cycling_lr,
+        kl_annealing=kl_annealing,
     )
 
     with open(os.path.join(config["outpath"], "model.dill"), "wb") as fh:
