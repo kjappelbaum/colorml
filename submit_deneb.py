@@ -71,6 +71,7 @@ def write_config_file(basename, scaler, activation, architecture):
     config["model"]["head_units"] = architecture[1]
     config["training"]["cycling_lr"] = False
     config["training"]["kl_annealing"] = True
+    config["early_stopping"]["patience"] = 25
     outpath = os.path.join(BASEFOLDER, "results", "models", basename)
     make_if_not_exists(outpath)
     config["outpath"] = outpath
