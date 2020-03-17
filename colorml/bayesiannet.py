@@ -4,7 +4,7 @@ import tensorflow_addons as tfa
 import probflow as pf
 from .utils import mapping_to_target_range
 from .clr import cyclic_learning_rate
-from .kl_anneal import monotonical_kl_anneal
+from .kl_anneal import monotonical_kl_anneal, cycle_kl_anneal
 from probflow.callbacks import (
     MonitorMetric,
     MonitorELBO,
@@ -146,7 +146,7 @@ def train_model(
 
         if kl_annealing:
             logger.info("Will use KL annealing")
-            kl_annealer = KLWeightScheduler(monotonical_kl_anneal)
+            kl_annealer = KLWeightScheduler(cycle_kl_anneal)
             callbacks.append(kl_annealer)
 
         model.fit(

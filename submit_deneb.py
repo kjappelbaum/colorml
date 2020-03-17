@@ -25,6 +25,9 @@ srun python -m colorml.run_training {submission}
 scalers = ["minmax", "standard"]
 activations = ["relu", "selu", "elu"]
 architectures = [
+    ([16, 8], [8, 8, 3]),
+    ([32, 16, 8], [8, 8, 3]),
+    ([32, 8, 8], [8, 8, 4, 3]),
     ([64, 8, 8], [8, 8, 3]),
     ([64, 8], [8, 8, 8, 3]),
     ([64, 16], [16, 8, 8, 3]),
