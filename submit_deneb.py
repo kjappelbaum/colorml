@@ -11,6 +11,7 @@ SUBMISSION = """#!/bin/bash -l
 #SBATCH --nodes=1
 #SBATCH --time=5:00:0
 #SBATCH --qos=gpu
+#SBATCH -m 32GB
 #SBATCH --gres=gpu:1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=1
