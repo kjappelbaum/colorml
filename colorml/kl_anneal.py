@@ -28,5 +28,5 @@ def cycle_kl_anneal(epoch):
         return f(tau)
 
     else:
-        return 1
+        return 1.0
 

@@ -17,7 +17,7 @@ SUBMISSION = """#!/bin/bash -l
 #SBATCH --cpus-per-task=1
 #SBATCH --partition=gpu
 
-module load gcc cuda cudnn mvapich2 openblas
+module load cuda cudnn 
 source ~/anaconda3/bin/activate colorml
 srun python -m colorml.run_training {submission}
 """
@@ -75,6 +75,7 @@ def write_config_file(basename, scaler, activation, architecture):
     config["training"]["cycling_lr"] = False
     config["training"]["kl_annealing"] = True
     config["early_stopping"]["patience"] = 25
+    config["augmentation"]["enabled"] = False
     outpath = os.path.join(BASEFOLDER, "results", "models", basename)
     make_if_not_exists(outpath)
     config["outpath"] = outpath
