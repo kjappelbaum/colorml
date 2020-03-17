@@ -6,7 +6,7 @@ import numpy as np
 
 def cyclic_learning_rate(
     global_step,
-    learning_rate=0.01,
+    learning_rate=0.0001,
     max_lr=0.1,
     step_size=20.0,
     gamma=0.99994,

@@ -72,7 +72,7 @@ def write_config_file(basename, scaler, activation, architecture):
     config["model"]["activation_function"] = activation
     config["model"]["units"] = architecture[0]
     config["model"]["head_units"] = architecture[1]
-    config["training"]["cycling_lr"] = False
+    config["training"]["cycling_lr"] = True
     config["training"]["kl_annealing"] = True
     config["early_stopping"]["patience"] = 25
     config["augmentation"]["enabled"] = False
