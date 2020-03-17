@@ -380,3 +380,6 @@ tags
 .renku/cache
 
 *.pdf
+*.joblib
+*.dill
+
