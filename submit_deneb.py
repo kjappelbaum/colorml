@@ -76,7 +76,7 @@ def write_config_file(basename, scaler, activation, architecture):
     config["training"]["kl_annealing"] = True
     config["early_stopping"]["patience"] = 25
     config["augmentation"]["enabled"] = False
-    config["colorspace"] == "hsl"
+    config["colorspace"] = "hsl"
     outpath = os.path.join(BASEFOLDER, "results", "models", basename)
     make_if_not_exists(outpath)
     config["outpath"] = outpath
