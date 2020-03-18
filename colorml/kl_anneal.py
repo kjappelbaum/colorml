@@ -6,7 +6,15 @@ def monotonical_kl_anneal(epoch):
     To use the standard monotonical anneal as in Bowman et al. 2015
     """
     M = 20
-    return np.min([np.tanh(1 / M * epoch), 1])
+    return np.min([np.tanh(1 / M * epoch), 1.0])
+
+
+def linear_kl_anneal(epoch):
+    """
+    To use the standard monotonical anneal as in Bowman et al. 2015
+    """
+    M = 20
+    return np.min([epoch / M, 1.0])
 
 
 def cycle_kl_anneal(epoch):
@@ -15,7 +23,7 @@ def cycle_kl_anneal(epoch):
     """
     R = 0.5
     M = 4
-    T = 200
+    T = 150
     TMRATIO = T / M
 
     tau = (epoch - 1) % (TMRATIO)

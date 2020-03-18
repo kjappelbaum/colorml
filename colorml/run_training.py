@@ -16,6 +16,16 @@ from .utils import (
 from .bayesiannet import build_model, train_model, measure_performance
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.model_selection import train_test_split
+from colour.models import (
+    RGB_to_XYZ,
+    XYZ_to_xy,
+    XYZ_to_Lab,
+    XYZ_to_RGB,
+    Lab_to_XYZ,
+    RGB_to_HSL,
+    RGB_to_HSV,
+    HSL_to_RGB,
+)
 import pandas as pd
 from numpy.random import seed
 import joblib
@@ -72,6 +82,15 @@ def orchestrate(config, configfile):
 
     y_train = y_train.values
     y_test = y_test.values
+
+    if config["colorspace"] == "rgb":
+        pass
+    elif config["colorspace"] == "hsl":
+        y_train = RGB_to_HSL(y_train)
+        y_test = RGB_to_HSL(y_test)
+    elif config["colorspace"] == "hsv":
+        y_train = RGB_to_HSV(y_train)
+        y_test = RGB_to_HSV(y_train)
 
     joblib.dump(scaler, os.path.join(config["outpath"], "scaler.joblib"))
     experiment.log_asset(os.path.join(config["outpath"], "scaler.joblib"))
