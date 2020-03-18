@@ -37,7 +37,7 @@ from .descriptornames import *
 import logging
 
 
-def orchestrate(config, configfile, tags):
+def orchestrate(config, configfile):
     logger = logging.getLogger("bayesnet")
     logger.setLevel(logging.DEBUG)
     experiment = Experiment(project_name="color-ml")
