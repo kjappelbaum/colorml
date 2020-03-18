@@ -33,14 +33,14 @@ from .descriptornames import *
 import logging
 
 
-def orchestrate(config, configfile):
+def orchestrate(config, configfile, tags):
     logger = logging.getLogger("bayesnet")
     logger.setLevel(logging.DEBUG)
     experiment = Experiment(project_name="color-ml")
     experiment.log_asset(configfile)
     experiment.log_parameters(flatten(config))
     experiment.log_asset(config["data"])
-
+    experiment.add_tags(config["tags"])
     seed(int(config["seed"]))
 
     make_if_not_exists(config["outpath"])

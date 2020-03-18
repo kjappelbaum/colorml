@@ -146,7 +146,7 @@ def train_model(
 
         if kl_annealing:
             logger.info("Will use KL annealing")
-            kl_annealer = KLWeightScheduler(cycle_kl_anneal)
+            kl_annealer = KLWeightScheduler(monotonical_kl_anneal)
             callbacks.append(kl_annealer)
 
         model.fit(
