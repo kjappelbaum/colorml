@@ -17,19 +17,19 @@ SUBMISSION = """#!/bin/bash -l
 #SBATCH --cpus-per-task=1
 #SBATCH --partition=gpu
 
-module load cuda cudnn 
+slmodules -s x86_E5v2_Mellanox_GPU -v
+module load gcc cuda cudnn 
 source ~/anaconda3/bin/activate colorml
 srun python -m colorml.run_training {submission}
 """
 
 scalers = ["minmax", "standard"]
-activations = ["relu", "selu", "elu"]
+activations = ["relu", "selu"]
+colorspaces = ["hsl", "rgb", "lab"]
 architectures = [
     ([16, 8], [8, 8, 3]),
     ([32, 16, 8], [8, 8, 3]),
     ([32, 8, 8], [8, 8, 4, 3]),
-    ([64, 8, 8], [8, 8, 3]),
-    ([64, 8], [8, 8, 8, 3]),
     ([64, 16], [16, 8, 8, 3]),
     ([64, 16], [16, 8, 3]),
 ]
@@ -41,19 +41,22 @@ def main(submit=False):
     for i, scaler in enumerate(scalers):
         for j, activation in enumerate(activations):
             for k, architecture in enumerate(architectures):
-                basename = "_".join([get_timestamp_string(), str(i), str(j), str(k)])
-                configfile = write_config_file(
-                    basename, scaler, activation, architecture
-                )
-                slurmfile = write_submission_script(configfile, basename)
-
-                if submit:
-                    subprocess.call(
-                        "sbatch {}".format("{}".format(slurmfile)),
-                        shell=True,
-                        cwd=BASEFOLDER,
+                for l, colorspace in enumerate(colorspaces):
+                    basename = "_".join(
+                        [get_timestamp_string(), str(i), str(j), str(k), str(l)]
                     )
-                    time.sleep(2)
+                    configfile = write_config_file(
+                        basename, scaler, activation, architecture, colorspace
+                    )
+                    slurmfile = write_submission_script(configfile, basename)
+
+                    if submit:
+                        subprocess.call(
+                            "sbatch {}".format("{}".format(slurmfile)),
+                            shell=True,
+                            cwd=BASEFOLDER,
+                        )
+                        time.sleep(2)
 
 
 def write_submission_script(configfile, basename):
@@ -64,7 +67,7 @@ def write_submission_script(configfile, basename):
     return slurmfile
 
 
-def write_config_file(basename, scaler, activation, architecture):
+def write_config_file(basename, scaler, activation, architecture, colorspace):
     config = parse_config(
         "/scratch/kjablonk/colorml/colorml/models/models/test_config.yaml"
     )
@@ -74,10 +77,10 @@ def write_config_file(basename, scaler, activation, architecture):
     config["model"]["head_units"] = architecture[1]
     config["training"]["cycling_lr"] = True
     config["training"]["kl_annealing"] = True
-    config["early_stopping"]["patience"] = 25
+    config["early_stopping"]["patience"] = 30
     config["augmentation"]["enabled"] = False
-    config["colorspace"] = "hsl"
-    config["tags"] = ["tanh kl anneal", "cycling lr", "hsl", "early stopping"]
+    config["colorspace"] = colorspace
+    config["tags"] = ["tanh kl anneal", "cycling lr", colorspace, "early stopping"]
     outpath = os.path.join(BASEFOLDER, "results", "models", basename)
     make_if_not_exists(outpath)
     config["outpath"] = outpath

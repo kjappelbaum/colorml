@@ -26,6 +26,10 @@ from colour.models import (
     RGB_to_HSV,
     HSL_to_RGB,
 )
+from colour.plotting import filter_RGB_colourspaces
+from colour.utilities import first_item
+
+colourspace = first_item(filter_RGB_colourspaces("sRGB").values())
 import pandas as pd
 from numpy.random import seed
 import joblib
@@ -91,6 +95,22 @@ def orchestrate(config, configfile, tags):
     elif config["colorspace"] == "hsv":
         y_train = RGB_to_HSV(y_train)
         y_test = RGB_to_HSV(y_train)
+    elif config["colorspace"] == "lab":
+        train_xyz = RGB_to_XYZ(
+            y_train,
+            colourspace.whitepoint,
+            colourspace.whitepoint,
+            colourspace.RGB_to_XYZ_matrix,
+        )
+        test_xyz = RGB_to_XYZ(
+            y_test,
+            colourspace.whitepoint,
+            colourspace.whitepoint,
+            colourspace.RGB_to_XYZ_matrix,
+        )
+
+        y_train = XYZ_to_Lab(train_xyz)
+        y_test = XYZ_to_Lab(test_xyz)
 
     joblib.dump(scaler, os.path.join(config["outpath"], "scaler.joblib"))
     experiment.log_asset(os.path.join(config["outpath"], "scaler.joblib"))
