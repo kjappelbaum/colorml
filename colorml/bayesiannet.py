@@ -4,7 +4,8 @@ import tensorflow_addons as tfa
 import probflow as pf
 from .utils import mapping_to_target_range
 from .clr import cyclic_learning_rate
-from .kl_anneal import monotonical_kl_anneal, cycle_kl_anneal
+from .kl_anneal import monotonical_kl_anneal, cycle_kl_anneal, linear_kl_anneal
+from functools import partial
 from probflow.callbacks import (
     MonitorMetric,
     MonitorELBO,
@@ -144,10 +145,23 @@ def train_model(
             cycling_learning_rate = LearningRateScheduler(cyclic_learning_rate)
             callbacks.append(cycling_learning_rate)
 
-        if kl_annealing:
+        if kl_annealing is not None:
             logger.info("Will use KL annealing")
-            kl_annealer = KLWeightScheduler(monotonical_kl_anneal)
-            callbacks.append(kl_annealer)
+            if kl_annealing["method"] == "tanh":
+                kl_annealer = KLWeightScheduler(
+                    partial(monotonical_kl_anneal, M=kl_annealing["constant"])
+                )
+                callbacks.append(kl_annealer)
+            elif kl_annealing["method"] == "linear":
+                kl_annealer = KLWeightScheduler(
+                    partial(linear_kl_anneal, M=kl_annealing["constant"])
+                )
+                callbacks.append(kl_annealer)
+            elif kl_annealing["method"] == "cycling":
+                kl_annealer = KLWeightScheduler(
+                    partial(cycle_kl_anneal, M=kl_annealing["constant"])
+                )
+                callbacks.append(kl_annealer)
 
         model.fit(
             X_train,
@@ -168,5 +182,5 @@ def measure_performance(model, X, y_true):
 
     stdev = prediction.std()
 
-    return {"mae": mae, "mse": mse, "std": stdev}
+    return {"mae": mae, "mse": mse, "std": stdev, "mae_std_ratio": mae / std}
 

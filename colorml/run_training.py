@@ -44,7 +44,14 @@ def orchestrate(config, configfile):
     experiment.log_asset(configfile)
     experiment.log_parameters(flatten(config))
     experiment.log_asset(config["data"])
-    experiment.add_tags(config["tags"])
+    experiment.log_parameter(
+        name="total_depth",
+        value=len(config["model"]["units"]) + len(config["model"]["head_units"]),
+    )
+    experiment.log_parameter(name="widest_layer", value=config["model"]["units"][0])
+    # using now for loop because the add.tags() function did not work
+    for tag in config["tags"]:
+        experiment.add_tag(tag)
     seed(int(config["seed"]))
 
     make_if_not_exists(config["outpath"])
@@ -112,6 +119,9 @@ def orchestrate(config, configfile):
         y_train = XYZ_to_Lab(train_xyz)
         y_test = XYZ_to_Lab(test_xyz)
 
+        y_train = (y_train + [0, 100, 100]) / [100, 200, 200]
+        y_test = (y_test + [0, 100, 100]) / [100, 200, 200]
+
     joblib.dump(scaler, os.path.join(config["outpath"], "scaler.joblib"))
     experiment.log_asset(os.path.join(config["outpath"], "scaler.joblib"))
 
@@ -142,9 +152,24 @@ def orchestrate(config, configfile):
         cycling_lr = False
 
     if config["training"]["kl_annealing"]:
-        kl_annealing = True
+        if config["kl_anneal"]["method"] == "linear":
+            kl_annealing = {
+                "method": "linear",
+                "M": int(config["kl_anneal"]["constant"]),
+            }
+        elif config["kl_anneal"]["method"] == "tanh":
+            kl_annealing = {
+                "method": "tanh",
+                "M": int(config["kl_anneal"]["constant"]),
+            }
+        elif config["kl_anneal"]["method"] == "cycling":
+            kl_annealing = {
+                "method": "cycling",
+                "M": int(config["kl_anneal"]["constant"]),
+            }
+
     else:
-        kl_annealing = False
+        kl_annealing = None
 
     logger.info("Built model.")
     logger.info(f"Head units: {config['model']['head_units']}")

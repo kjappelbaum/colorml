@@ -26,13 +26,15 @@ srun python -m colorml.run_training {submission}
 scalers = ["minmax", "standard"]
 activations = ["relu", "selu"]
 colorspaces = ["hsl", "rgb", "lab"]
+kl_anneal_const = [10, 20, 50, 100, 200]
+kl_anneal_method = ["linear", "tanh"]
 architectures = [
+    ([16, 8, 8], [8, 8, 3]),
     ([16, 8], [8, 8, 3]),
-    ([32, 16, 8], [8, 8, 3]),
-    ([32, 8, 8], [8, 8, 4, 3]),
     ([64, 16], [16, 8, 8, 3]),
     ([64, 16], [16, 8, 3]),
 ]
+lrs = [1e-4, 3e-4, 3e-3, 3e-2]
 
 
 @click.command("cli")
@@ -42,21 +44,41 @@ def main(submit=False):
         for j, activation in enumerate(activations):
             for k, architecture in enumerate(architectures):
                 for l, colorspace in enumerate(colorspaces):
-                    basename = "_".join(
-                        [get_timestamp_string(), str(i), str(j), str(k), str(l)]
-                    )
-                    configfile = write_config_file(
-                        basename, scaler, activation, architecture, colorspace
-                    )
-                    slurmfile = write_submission_script(configfile, basename)
+                    for m, annealconst in enumerate(kl_anneal_const):
+                        for n, lr in enumerate(lrs):
+                            for o, kl_method in enumerate(kl_anneal_method):
+                                basename = "_".join(
+                                    [
+                                        get_timestamp_string(),
+                                        str(i),
+                                        str(j),
+                                        str(k),
+                                        str(l),
+                                        str(m),
+                                        str(n),
+                                    ]
+                                )
+                                configfile = write_config_file(
+                                    basename,
+                                    scaler,
+                                    activation,
+                                    architecture,
+                                    colorspace,
+                                    annealconst,
+                                    lr,
+                                    kl_method,
+                                )
+                                slurmfile = write_submission_script(
+                                    configfile, basename
+                                )
 
-                    if submit:
-                        subprocess.call(
-                            "sbatch {}".format("{}".format(slurmfile)),
-                            shell=True,
-                            cwd=BASEFOLDER,
-                        )
-                        time.sleep(2)
+                                if submit:
+                                    subprocess.call(
+                                        "sbatch {}".format("{}".format(slurmfile)),
+                                        shell=True,
+                                        cwd=BASEFOLDER,
+                                    )
+                                    time.sleep(2)
 
 
 def write_submission_script(configfile, basename):
@@ -67,7 +89,9 @@ def write_submission_script(configfile, basename):
     return slurmfile
 
 
-def write_config_file(basename, scaler, activation, architecture, colorspace):
+def write_config_file(
+    basename, scaler, activation, architecture, colorspace, klanneal, lr, kl_method
+):
     config = parse_config(
         "/scratch/kjablonk/colorml/colorml/models/models/test_config.yaml"
     )
@@ -75,10 +99,13 @@ def write_config_file(basename, scaler, activation, architecture, colorspace):
     config["model"]["activation_function"] = activation
     config["model"]["units"] = architecture[0]
     config["model"]["head_units"] = architecture[1]
-    config["training"]["cycling_lr"] = True
+    config["training"]["cycling_lr"] = False
     config["training"]["kl_annealing"] = True
+    config["training"]["learning_rate"] = lr
     config["early_stopping"]["patience"] = 30
     config["augmentation"]["enabled"] = False
+    config["kl_anneal"]["method"] == kl_method
+    config["kl_anneal"]["constant"] == klanneal
     config["colorspace"] = colorspace
     config["tags"] = ["tanh kl anneal", "cycling lr", colorspace, "early stopping"]
     outpath = os.path.join(BASEFOLDER, "results", "models", basename)
