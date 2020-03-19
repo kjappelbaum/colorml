@@ -104,9 +104,7 @@ def write_config_file(
     config["training"]["learning_rate"] = lr
     config["early_stopping"]["patience"] = 30
     config["augmentation"]["enabled"] = False
-    config["kl_anneal"] = {}
-    config["kl_anneal"]["method"] == kl_method
-    config["kl_anneal"]["constant"] == klanneal
+    config["kl_anneal"] = {"method": kl_method, "constant": klanneal}
     config["colorspace"] = colorspace
     config["tags"] = ["tanh kl anneal", "cycling lr", colorspace, "early stopping"]
     outpath = os.path.join(BASEFOLDER, "results", "models", basename)
