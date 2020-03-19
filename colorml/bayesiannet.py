@@ -182,5 +182,5 @@ def measure_performance(model, X, y_true):
 
     stdev = prediction.std()
 
-    return {"mae": mae, "mse": mse, "std": stdev, "mae_std_ratio": mae / std}
+    return {"mae": mae, "mse": mse, "std": stdev, "mae_std_ratio": mae / stdev}
 
