@@ -104,6 +104,7 @@ def write_config_file(
     config["training"]["learning_rate"] = lr
     config["early_stopping"]["patience"] = 30
     config["augmentation"]["enabled"] = False
+    config["kl_anneal"] = {}
     config["kl_anneal"]["method"] == kl_method
     config["kl_anneal"]["constant"] == klanneal
     config["colorspace"] = colorspace
