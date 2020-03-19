@@ -23,15 +23,13 @@ source ~/anaconda3/bin/activate colorml
 srun python -m colorml.run_training {submission}
 """
 
-scalers = ["minmax", "standard"]
-activations = ["relu", "selu"]
+scalers = ["minmax"]
+activations = ["selu"]
 colorspaces = ["hsl", "rgb", "lab"]
-kl_anneal_const = [10, 20, 50, 100, 200]
+kl_anneal_const = [20, 100, 200]
 kl_anneal_method = ["linear", "tanh"]
 architectures = [
-    ([16, 8, 8], [8, 8, 3]),
     ([16, 8], [8, 8, 3]),
-    ([64, 16], [16, 8, 8, 3]),
     ([64, 16], [16, 8, 3]),
 ]
 lrs = [1e-4, 3e-4, 3e-3, 3e-2]

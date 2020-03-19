@@ -155,17 +155,17 @@ def orchestrate(config, configfile):
         if config["kl_anneal"]["method"] == "linear":
             kl_annealing = {
                 "method": "linear",
-                "M": int(config["kl_anneal"]["constant"]),
+                "constant": int(config["kl_anneal"]["constant"]),
             }
         elif config["kl_anneal"]["method"] == "tanh":
             kl_annealing = {
                 "method": "tanh",
-                "M": int(config["kl_anneal"]["constant"]),
+                "constant": int(config["kl_anneal"]["constant"]),
             }
         elif config["kl_anneal"]["method"] == "cycling":
             kl_annealing = {
                 "method": "cycling",
-                "M": int(config["kl_anneal"]["constant"]),
+                "constant": int(config["kl_anneal"]["constant"]),
             }
 
     else:
