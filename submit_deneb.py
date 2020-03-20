@@ -23,14 +23,14 @@ source ~/anaconda3/bin/activate colorml
 srun python -m colorml.run_training {submission}
 """
 
-scalers = ["minmax"]
+scalers = ["minmax", "standard"]
 activations = ["selu"]
-colorspaces = ["hsl", "rgb", "lab"]
-kl_anneal_const = [20, 100, 200]
-kl_anneal_method = ["linear", "tanh"]
+colorspaces = ["hsl"]
+kl_anneal_const = [100]
+kl_anneal_method = ["tanh"]
 architectures = [
     ([16, 8], [8, 8, 3]),
-    ([64, 16], [16, 8, 3]),
+    # ([64, 16], [16, 8, 3]),
 ]
 lrs = [1e-4, 3e-4, 3e-3, 3e-2]
 
@@ -101,10 +101,10 @@ def write_config_file(
     config["training"]["kl_annealing"] = True
     config["training"]["learning_rate"] = lr
     config["early_stopping"]["patience"] = 30
-    config["augmentation"]["enabled"] = False
+    config["augmentation"]["enabled"] = True
     config["kl_anneal"] = {"method": kl_method, "constant": klanneal}
     config["colorspace"] = colorspace
-    config["tags"] = ["tanh kl anneal", "cycling lr", colorspace, "early stopping"]
+    config["tags"] = ["tanh kl anneal", colorspace, "early stopping", "augmentation"]
     outpath = os.path.join(BASEFOLDER, "results", "models", basename)
     make_if_not_exists(outpath)
     config["outpath"] = outpath
