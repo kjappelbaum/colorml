@@ -14,6 +14,7 @@ from probflow.callbacks import (
     KLWeightScheduler,
 )
 from numpy.random import seed
+from scipy import stats
 from comet_ml import Experiment
 
 
@@ -182,5 +183,13 @@ def measure_performance(model, X, y_true):
 
     stdev = prediction.std()
 
-    return {"mae": mae, "mse": mse, "std": stdev, "mae_std_ratio": mae / stdev}
+    corr = stats.corr(prediction, y_true)
+
+    return {
+        "mae": mae,
+        "mse": mse,
+        "std": stdev,
+        "mae_std_ratio": mae / stdev,
+        "pearson_corr": corr,
+    }
 
