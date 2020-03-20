@@ -183,9 +183,9 @@ def measure_performance(model, X, y_true):
 
     stdev = prediction.std()
 
-    corr0 = stats.corr(prediction[:, 0], y_true[:, 0])
-    corr1 = stats.corr(prediction[:, 1], y_true[:, 1])
-    corr2 = stats.corr(prediction[:, 2], y_true[:, 2])
+    corr0 = stats.pearsonr(prediction[:, 0], y_true[:, 0])
+    corr1 = stats.pearsonr(prediction[:, 1], y_true[:, 1])
+    corr2 = stats.pearsonr(prediction[:, 2], y_true[:, 2])
 
     return {
         "mae": mae,
