@@ -23,16 +23,44 @@ source ~/anaconda3/bin/activate colorml
 srun python -m colorml.run_training {submission}
 """
 
-scalers = ["minmax", "standard"]
+scalers = ["minmax"]
 activations = ["selu"]
 colorspaces = ["hsl"]
-kl_anneal_const = [100]
+kl_anneal_const = [50, 80, 100]
 kl_anneal_method = ["tanh"]
 architectures = [
     ([16, 8], [8, 8, 3]),
+    ([16, 8, 8], [8, 8, 3]),
     # ([64, 16], [16, 8, 3]),
 ]
-lrs = [1e-4, 3e-4, 3e-3, 3e-2]
+lrs = [3e-3, 6e-3, 3e-2, 6e-2, 3e-1]
+
+features = [
+    [
+        "metalcenter_descriptors",
+        "functionalgroup_descriptors",
+        "linker_descriptors",
+        "mol_desc",
+        "summed_linker_descriptors",
+        "summed_metalcenter_descriptors",
+        "summed_functionalgroup_descriptors",
+    ],
+    [
+        "metalcenter_descriptors",
+        "functionalgroup_descriptors",
+        "linker_descriptors",
+        "mol_desc",
+    ],
+    [
+        "metalcenter_descriptors",
+        "functionalgroup_descriptors",
+        "linker_descriptors",
+        "summed_linker_descriptors",
+        "summed_metalcenter_descriptors",
+        "summed_functionalgroup_descriptors",
+    ],
+    ["metalcenter_descriptors", "functionalgroup_descriptors", "linker_descriptors"],
+]
 
 
 @click.command("cli")
@@ -45,38 +73,42 @@ def main(submit=False):
                     for m, annealconst in enumerate(kl_anneal_const):
                         for n, lr in enumerate(lrs):
                             for o, kl_method in enumerate(kl_anneal_method):
-                                basename = "_".join(
-                                    [
-                                        get_timestamp_string(),
-                                        str(i),
-                                        str(j),
-                                        str(k),
-                                        str(l),
-                                        str(m),
-                                        str(n),
-                                    ]
-                                )
-                                configfile = write_config_file(
-                                    basename,
-                                    scaler,
-                                    activation,
-                                    architecture,
-                                    colorspace,
-                                    annealconst,
-                                    lr,
-                                    kl_method,
-                                )
-                                slurmfile = write_submission_script(
-                                    configfile, basename
-                                )
-
-                                if submit:
-                                    subprocess.call(
-                                        "sbatch {}".format("{}".format(slurmfile)),
-                                        shell=True,
-                                        cwd=BASEFOLDER,
+                                for p, feature in enumerate(features):
+                                    basename = "_".join(
+                                        [
+                                            get_timestamp_string(),
+                                            str(i),
+                                            str(j),
+                                            str(k),
+                                            str(l),
+                                            str(m),
+                                            str(n),
+                                            str(o),
+                                            str(p),
+                                        ]
                                     )
-                                    time.sleep(2)
+                                    configfile = write_config_file(
+                                        basename,
+                                        scaler,
+                                        activation,
+                                        architecture,
+                                        colorspace,
+                                        annealconst,
+                                        lr,
+                                        kl_method,
+                                        features,
+                                    )
+                                    slurmfile = write_submission_script(
+                                        configfile, basename
+                                    )
+
+                                    if submit:
+                                        subprocess.call(
+                                            "sbatch {}".format("{}".format(slurmfile)),
+                                            shell=True,
+                                            cwd=BASEFOLDER,
+                                        )
+                                        time.sleep(2)
 
 
 def write_submission_script(configfile, basename):
@@ -94,13 +126,14 @@ def write_config_file(
         "/scratch/kjablonk/colorml/colorml/models/models/test_config.yaml"
     )
     config["scaler"] = scaler
+    config["features"] = features
     config["model"]["activation_function"] = activation
     config["model"]["units"] = architecture[0]
     config["model"]["head_units"] = architecture[1]
     config["training"]["cycling_lr"] = False
     config["training"]["kl_annealing"] = True
     config["training"]["learning_rate"] = lr
-    config["early_stopping"]["patience"] = 30
+    config["early_stopping"]["patience"] = 40
     config["augmentation"]["enabled"] = True
     config["kl_anneal"] = {"method": kl_method, "constant": klanneal}
     config["colorspace"] = colorspace
