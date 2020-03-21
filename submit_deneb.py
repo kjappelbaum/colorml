@@ -120,7 +120,15 @@ def write_submission_script(configfile, basename):
 
 
 def write_config_file(
-    basename, scaler, activation, architecture, colorspace, klanneal, lr, kl_method
+    basename,
+    scaler,
+    activation,
+    architecture,
+    colorspace,
+    klanneal,
+    lr,
+    kl_method,
+    features,
 ):
     config = parse_config(
         "/scratch/kjablonk/colorml/colorml/models/models/test_config.yaml"
