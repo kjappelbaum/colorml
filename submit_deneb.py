@@ -96,7 +96,7 @@ def main(submit=False):
                                         annealconst,
                                         lr,
                                         kl_method,
-                                        features,
+                                        feature,
                                     )
                                     slurmfile = write_submission_script(
                                         configfile, basename
@@ -128,13 +128,13 @@ def write_config_file(
     klanneal,
     lr,
     kl_method,
-    features,
+    feature,
 ):
     config = parse_config(
         "/scratch/kjablonk/colorml/colorml/models/models/test_config.yaml"
     )
     config["scaler"] = scaler
-    config["features"] = features
+    config["features"] = feature
     config["model"]["activation_function"] = activation
     config["model"]["units"] = architecture[0]
     config["model"]["head_units"] = architecture[1]
