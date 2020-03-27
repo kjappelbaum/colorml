@@ -24,14 +24,14 @@ srun python -m colorml.run_training {submission}
 """
 
 scalers = ["minmax"]
-activations = ["selu"]
-colorspaces = ["hsl"]
+activations = ["selu", "relu"]
+colorspaces = ["rgb"]
 kl_anneal_const = [50, 80, 100]
 kl_anneal_method = ["tanh"]
 architectures = [
     ([16, 8], [8, 8, 3]),
     ([16, 8, 8], [8, 8, 3]),
-    # ([64, 16], [16, 8, 3]),
+    ([64, 16], [16, 8, 3]),
 ]
 lrs = [3e-3, 6e-3, 3e-2, 6e-2, 3e-1]
 
@@ -74,41 +74,46 @@ def main(submit=False):
                         for n, lr in enumerate(lrs):
                             for o, kl_method in enumerate(kl_anneal_method):
                                 for p, feature in enumerate(features):
-                                    basename = "_".join(
-                                        [
-                                            get_timestamp_string(),
-                                            str(i),
-                                            str(j),
-                                            str(k),
-                                            str(l),
-                                            str(m),
-                                            str(n),
-                                            str(o),
-                                            str(p),
-                                        ]
-                                    )
-                                    configfile = write_config_file(
-                                        basename,
-                                        scaler,
-                                        activation,
-                                        architecture,
-                                        colorspace,
-                                        annealconst,
-                                        lr,
-                                        kl_method,
-                                        feature,
-                                    )
-                                    slurmfile = write_submission_script(
-                                        configfile, basename
-                                    )
-
-                                    if submit:
-                                        subprocess.call(
-                                            "sbatch {}".format("{}".format(slurmfile)),
-                                            shell=True,
-                                            cwd=BASEFOLDER,
+                                    for q, augment in enumerate([True, False]):
+                                        basename = "_".join(
+                                            [
+                                                get_timestamp_string(),
+                                                str(i),
+                                                str(j),
+                                                str(k),
+                                                str(l),
+                                                str(m),
+                                                str(n),
+                                                str(o),
+                                                str(p),
+                                                str(q),
+                                            ]
                                         )
-                                        time.sleep(2)
+                                        configfile = write_config_file(
+                                            basename,
+                                            scaler,
+                                            activation,
+                                            architecture,
+                                            colorspace,
+                                            annealconst,
+                                            lr,
+                                            kl_method,
+                                            feature,
+                                            augment,
+                                        )
+                                        slurmfile = write_submission_script(
+                                            configfile, basename
+                                        )
+
+                                        if submit:
+                                            subprocess.call(
+                                                "sbatch {}".format(
+                                                    "{}".format(slurmfile)
+                                                ),
+                                                shell=True,
+                                                cwd=BASEFOLDER,
+                                            )
+                                            time.sleep(2)
 
 
 def write_submission_script(configfile, basename):
@@ -129,6 +134,7 @@ def write_config_file(
     lr,
     kl_method,
     feature,
+    augment,
 ):
     config = parse_config(
         "/scratch/kjablonk/colorml/colorml/models/models/test_config.yaml"
@@ -142,7 +148,7 @@ def write_config_file(
     config["training"]["kl_annealing"] = True
     config["training"]["learning_rate"] = lr
     config["early_stopping"]["patience"] = 40
-    config["augmentation"]["enabled"] = True
+    config["augmentation"]["enabled"] = augment
     config["kl_anneal"] = {"method": kl_method, "constant": klanneal}
     config["colorspace"] = colorspace
     config["tags"] = ["tanh kl anneal", colorspace, "early stopping", "augmentation"]
