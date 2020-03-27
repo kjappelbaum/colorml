@@ -15,6 +15,7 @@ SUBMISSION = """#!/bin/bash -l
 #SBATCH --gres=gpu:1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=1
+#SBATCH --partition=gpu
 
 slmodules -s x86_E5v2_Mellanox_GPU -v
 module load gcc cuda cudnn 
