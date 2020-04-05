@@ -78,7 +78,7 @@ class TwoHeadedNet(pf.ContinuousModel):
         if self.batch_norm is not None:
             x = self.batch_norm(x)
 
-        return pf.Normal(self.mean(x), tf.exp(self.std(x)))
+        return pf.Cauchy(self.mean(x), tf.exp(self.std(x)))
 
 
 def build_model(

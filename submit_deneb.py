@@ -26,15 +26,12 @@ srun python -m colorml.run_training {submission}
 scalers = ["minmax", "standard"]
 activations = ["selu"]
 colorspaces = ["rgb"]
-kl_anneal_const = [50, 80, 100]
-kl_anneal_method = ["tanh", "linear"]
+kl_anneal_const = [100]
+kl_anneal_method = ["tanh"]
 architectures = [
     ([16, 8], [8, 8, 3]),
-    ([16, 8], [8, 3]),
-    ([16, 16], [16, 3]),
-    ([32, 16], [16, 3]),
 ]
-lrs = [3e-3, 3e-2]
+lrs = [3e-3]
 
 features = [
     [
