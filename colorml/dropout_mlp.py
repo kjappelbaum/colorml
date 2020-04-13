@@ -32,7 +32,7 @@ def build_model(
     dropout: float = 0.2,
     gaussian_dropout: bool = False,
     kernel_init="he_normal",
-    l1: float = 0.001,
+    l1rate: float = 0.001,
 ):
     mlp = Sequential()
     # http://proceedings.mlr.press/v15/glorot11a/glorot11a.pdf
@@ -42,7 +42,7 @@ def build_model(
             activation="linear",
             kernel_initializer=kernel_init,
             input_shape=(n_features,),
-            activity_regularizer=l1(l1),
+            activity_regularizer=l1(l1rate),
         )
     )
     mlp.add(Activation("relu"))
@@ -57,7 +57,7 @@ def build_model(
                 layer,
                 activation="linear",
                 kernel_initializer=kernel_init,
-                activity_regularizer=l1(l1),
+                activity_regularizer=l1(l1rate),
             )
         )
         mlp.add(Activation("relu"))
