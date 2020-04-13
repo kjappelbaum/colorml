@@ -9,8 +9,11 @@ from keras import Sequential
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau
 from keras.constraints import MinMaxNorm
 from keras.initializers import Constant
-from keras.layers import Dropout, Dense, BatchNormalization
+from keras.layers import Dropout, Dense, BatchNormalization, GaussianDropout, Activation
 from keras.optimizers import Adam
+import tensorflow as tf
+from numpy.random import seed
+
 
 from colorml.utils import (
     mapping_to_target_range,
@@ -24,22 +27,44 @@ from colorml.utils import (
 
 
 def build_model(
-    n_features, layers=[64, 32, 16, 8], dropout: float = 0.2, kernel_init="he_normal",
+    n_features,
+    layers=[64, 32, 16, 8],
+    dropout: float = 0.2,
+    gaussian_dropout: bool = False,
+    kernel_init="he_normal",
+    l1: float = 0.001,
 ):
     mlp = Sequential()
+    # http://proceedings.mlr.press/v15/glorot11a/glorot11a.pdf
     mlp.add(
         Dense(
             layers[0],
-            activation="relu",
+            activation="linear",
             kernel_initializer=kernel_init,
             input_shape=(n_features,),
+            activity_regularizer=l1(l1),
         )
     )
-    mlp.add(Dropout(dropout))
+    mlp.add(Activation("relu"))
+    if not gaussian_dropout:
+        mlp.add(Dropout(dropout))
+    else:
+        mlp.add(GaussianDropout(dropout))
 
     for layer in layers[1:]:
-        mlp.add(Dense(layer, activation="relu", kernel_initializer=kernel_init))
-        mlp.add(Dropout(dropout))
+        mlp.add(
+            Dense(
+                layer,
+                activation="linear",
+                kernel_initializer=kernel_init,
+                activity_regularizer=l1(l1),
+            )
+        )
+        mlp.add(Activation("relu"))
+        if not gaussian_dropout:
+            mlp.add(Dropout(dropout))
+        else:
+            mlp.add(GaussianDropout(dropout))
 
     mlp.add(
         Dense(3, activation=mapping_to_target_range, kernel_initializer=kernel_init)

@@ -28,6 +28,7 @@ import ruamel.yaml as yaml
 from .descriptornames import *
 from numpy.random import seed
 import joblib
+from scipy import stats
 
 
 def augment_data(
@@ -206,7 +207,7 @@ def plot_prediction_dist(
     centrality: str = "median",
     n_samples: int = 10,
     width: float = 0.2,
-    figsize: tuple = (8.16),
+    figsize: tuple = (8, 16),
 ):
     """Plot figure that compares color of predictions versus acutal colors.
     
