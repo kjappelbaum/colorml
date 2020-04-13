@@ -11,6 +11,7 @@ from keras.constraints import MinMaxNorm
 from keras.initializers import Constant
 from keras.layers import Dropout, Dense, BatchNormalization, GaussianDropout, Activation
 from keras.optimizers import Adam
+from keras.regularizers import l1
 import tensorflow as tf
 from numpy.random import seed
 
