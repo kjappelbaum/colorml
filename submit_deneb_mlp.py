@@ -20,18 +20,15 @@ SUBMISSION = """#!/bin/bash -l
 slmodules -s x86_E5v2_Mellanox_GPU -v
 module load gcc cuda cudnn 
 source ~/anaconda3/bin/activate colorml
-srun python -m colorml.run_training {submission}
+srun python -m colorml.run_mlp_training {submission}
 """
 
 scalers = ["minmax", "standard"]
-activations = ["selu"]
-colorspaces = ["rgb"]
-kl_anneal_const = [100]
-kl_anneal_method = ["tanh"]
-architectures = [
-    ([16, 8], [8, 8, 3]),
-]
-lrs = [3e-3]
+colorspaces = ["rgb", "hsl", "lab"]
+architectures = [[64, 32, 16, 8], [128, 64, 32, 16, 8], [128, 16, 8], [32, 16, 8]]
+lrs = [3e-3, 3e-2, 3e-4]
+l1s = [1e-6, 1e-5, 1e-4, 1e-3, 1e-2]
+augments = [True, False]
 
 features = [
     [
@@ -65,53 +62,37 @@ features = [
 @click.option("--submit", is_flag=True)
 def main(submit=False):
     for i, scaler in enumerate(scalers):
-        for j, activation in enumerate(activations):
-            for k, architecture in enumerate(architectures):
-                for l, colorspace in enumerate(colorspaces):
-                    for m, annealconst in enumerate(kl_anneal_const):
-                        for n, lr in enumerate(lrs):
-                            for o, kl_method in enumerate(kl_anneal_method):
-                                for p, feature in enumerate(features):
-                                    for q, augment in enumerate([True, False]):
-                                        basename = "_".join(
-                                            [
-                                                get_timestamp_string(),
-                                                str(i),
-                                                str(j),
-                                                str(k),
-                                                str(l),
-                                                str(m),
-                                                str(n),
-                                                str(o),
-                                                str(p),
-                                                str(q),
-                                            ]
-                                        )
-                                        configfile = write_config_file(
-                                            basename,
-                                            scaler,
-                                            activation,
-                                            architecture,
-                                            colorspace,
-                                            annealconst,
-                                            lr,
-                                            kl_method,
-                                            feature,
-                                            augment,
-                                        )
-                                        slurmfile = write_submission_script(
-                                            configfile, basename
-                                        )
+        for j, architecture in enumerate(architectures):
+            for k, colorspace in enumerate(colorspaces):
+                for l, l1 in enumerate(l1s):
+                    for m, lr in enumerate(lrs):
+                        for n, feature in enumerate(features):
+                            for o, augment in enumerate(augments):
 
-                                        if submit:
-                                            subprocess.call(
-                                                "sbatch {}".format(
-                                                    "{}".format(slurmfile)
-                                                ),
-                                                shell=True,
-                                                cwd=BASEFOLDER,
-                                            )
-                                            time.sleep(2)
+                                basename = "_".join(
+                                    [get_timestamp_string(), i, j, k, l, m, n, o]
+                                )
+                                configfile = write_config_file(
+                                    basename,
+                                    scaler,
+                                    architecture,
+                                    colorspace,
+                                    l1,
+                                    lr,
+                                    feature,
+                                    augment,
+                                )
+                                slurmfile = write_submission_script(
+                                    configfile, basename
+                                )
+
+                                if submit:
+                                    subprocess.call(
+                                        "sbatch {}".format("{}".format(slurmfile)),
+                                        shell=True,
+                                        cwd=BASEFOLDER,
+                                    )
+                                    time.sleep(2)
 
 
 def write_submission_script(configfile, basename):
@@ -123,26 +104,22 @@ def write_submission_script(configfile, basename):
 
 
 def write_config_file(
-    basename,
-    scaler,
-    activation,
-    architecture,
-    colorspace,
-    klanneal,
-    lr,
-    kl_method,
-    feature,
-    augment,
+    basename, scaler, architecture, colorspace, l1, lr, feature, augment,
 ):
     config = parse_config(
-        "/scratch/kjablonk/colorml/colorml/models/models/test_config.yaml"
+        "/scratch/kjablonk/colorml/colorml/models/models/mlp_base.yaml"
     )
     config["scaler"] = scaler
     config["features"] = feature
-    config["model"]["units"] = architecture[0]
+    config["model"]["units"] = architecture
     config["training"]["learning_rate"] = lr
     config["early_stopping"]["enabled"] = False
+    config["early_stopping"]["patience"] = 30
     config["augmentation"]["enabled"] = augment
+    config["model"]["l1"] = l1
+    config["model"]["kernel_init"] = "he_normal"
+    config["dropout"]["probability"] = 0.2
+    config["dropout"]["gaussian"] = False
     config["colorspace"] = colorspace
     config["tags"] = ["mlp dropout", colorspace, "augmentation"]
     outpath = os.path.join(BASEFOLDER, "results", "models", basename)

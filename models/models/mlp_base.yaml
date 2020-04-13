@@ -1,0 +1,28 @@
+data: "/scratch/kjablonk/colorml/colorml/data/color_feat_merged.csv" # path to csv file
+outpath: "/scratch/kjablonk/colorml/colorml/results/models/test"
+features: [
+    metalcenter_descriptors,
+    functionalgroup_descriptors,
+    linker_descriptors,
+    mol_desc,
+    summed_linker_descriptors,
+    summed_metalcenter_descriptors,
+    summed_functionalgroup_descriptors,
+  ] # 'all'
+augmentation:
+  enabled: True
+  augmentation_dict: "/scratch/kjablonk/colorml/colorml/data/augment_dict.pkl"
+scaler: minmax # 'standard' or 'minmax'
+scale_labels: True
+train_size: 0.7
+valid_size: 0.9
+seed: 821996
+model:
+  units: [32, 16]
+early_stopping:
+  enabled: True
+  patience: 10
+training:
+  batch_size: 268
+  epochs: 500
+  learning_rate: None # None uses default lr

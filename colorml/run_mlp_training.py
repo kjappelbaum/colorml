@@ -132,8 +132,8 @@ def orchestrate(config, configfile):
         config["model"]["units"],
         dropout=config["dropout"]["probability"],
         gaussian_dropout=config["dropout"]["gaussian"],
-        kernel_init=config["kernel_init"],
-        l1=config["l1"],
+        kernel_init=config["model"]["kernel_init"],
+        l1=config["model"]["l1"],
     )
 
     if config["training"]["learning_rate"] != "None":
@@ -142,16 +142,6 @@ def orchestrate(config, configfile):
         lr = None
 
     logger.info("Built model.")
-
-    # experiment.log_asset_data(
-    #     (X_train, y_train), metadata={"split": "train", "scaled": True}
-    # )
-    # experiment.log_asset_data(
-    #     (X_valid, y_valid), metadata={"split": "valid", "scaled": True}
-    # )
-    # experiment.log_asset_data(
-    #     (X_test, y_test), metadata={"split": "test", "scaled": True}
-    # )
 
     model = train_model(
         experiment,
