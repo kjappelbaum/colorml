@@ -22,6 +22,9 @@ model:
 early_stopping:
   enabled: True
   patience: 10
+dropout:
+  probability: 0.2
+  gaussian: True
 training:
   batch_size: 268
   epochs: 500
