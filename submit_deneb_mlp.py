@@ -24,11 +24,11 @@ srun python -m colorml.run_mlp_training {submission}
 """
 
 scalers = ["minmax", "standard"]
-colorspaces = ["rgb", "hsl", "lab"]
+colorspaces = ["rgb", "hsl"]
 architectures = [[64, 32, 16, 8], [128, 64, 32, 16, 8], [128, 16, 8], [32, 16, 8]]
 lrs = [3e-3, 3e-2, 3e-4]
-l1s = [1e-6, 1e-5, 1e-4, 1e-3, 1e-2]
-augments = [True, False]
+l1s = [1e-6, 1e-4, 1e-3, 1e-2]
+augments = [True]
 
 features = [
     [
