@@ -29,6 +29,7 @@ from .descriptornames import *
 from numpy.random import seed
 import joblib
 from scipy import stats
+from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 
 def augment_data(
@@ -341,6 +342,28 @@ def measure_performance(model, X, y_true):
     mse = model.metric("mse", X, y_true)
     prediction = model.predict(X)
 
+    stdev = prediction.std()
+
+    corr0 = stats.pearsonr(prediction[:, 0], y_true[:, 0])[0]
+    corr1 = stats.pearsonr(prediction[:, 1], y_true[:, 1])[0]
+    corr2 = stats.pearsonr(prediction[:, 2], y_true[:, 2])[0]
+
+    return {
+        "mae": mae,
+        "mse": mse,
+        "std": stdev,
+        "mae_std_ratio": mae / stdev,
+        "pearson_corr0": corr0,
+        "pearson_corr1": corr1,
+        "pearson_corr2": corr2,
+    }
+
+
+def measure_performance2(model, X, y_true):
+    prediction = model.predict(X)
+    mae = mean_absolute_error(y_true, prediction)
+    mse = mean_squared_error(y_true, prediction)
+    
     stdev = prediction.std()
 
     corr0 = stats.pearsonr(prediction[:, 0], y_true[:, 0])[0]

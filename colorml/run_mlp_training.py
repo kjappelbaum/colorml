@@ -14,7 +14,7 @@ from .utils import (
     flatten,
 )
 from .dropout_mlp import build_model, train_model
-from .utils import measure_performance
+from .utils import measure_performance2
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.model_selection import train_test_split
 from colour.models import (
@@ -161,9 +161,9 @@ def orchestrate(config, configfile):
 
     experiment.log_asset(os.path.join(config["outpath"], "model.dill"))
 
-    train_performance = measure_performance(model, X_train, y_train)
+    train_performance = measure_performance2(model, X_train, y_train)
     experiment.log_metrics(train_performance, prefix="train")
-    test_performance = measure_performance(model, X_test, y_test)
+    test_performance = measure_performance2(model, X_test, y_test)
     experiment.log_metrics(test_performance, prefix="test")
     results = {"train": train_performance, "test": test_performance}
 
