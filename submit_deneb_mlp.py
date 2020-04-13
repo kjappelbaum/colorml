@@ -70,7 +70,16 @@ def main(submit=False):
                             for o, augment in enumerate(augments):
 
                                 basename = "_".join(
-                                    [get_timestamp_string(), i, j, k, l, m, n, o]
+                                    [
+                                        get_timestamp_string(),
+                                        str(i),
+                                        str(j),
+                                        str(k),
+                                        str(l),
+                                        str(m),
+                                        str(n),
+                                        str(o),
+                                    ]
                                 )
                                 configfile = write_config_file(
                                     basename,
