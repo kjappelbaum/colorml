@@ -133,7 +133,7 @@ def orchestrate(config, configfile):
         dropout=float(config["dropout"]["probability"]),
         gaussian_dropout=config["dropout"]["gaussian"],
         kernel_init=config["model"]["kernel_init"],
-        l1=float(config["model"]["l1"]),
+        l1rate=float(config["model"]["l1"]),
     )
 
     if config["training"]["learning_rate"] != "None":
