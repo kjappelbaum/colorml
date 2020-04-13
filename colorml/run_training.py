@@ -13,7 +13,8 @@ from .utils import (
     augment_data,
     flatten,
 )
-from .bayesiannet import build_model, train_model, measure_performance
+from .bayesiannet import build_model, train_model
+from .utils import measure_performance
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.model_selection import train_test_split
 from colour.models import (

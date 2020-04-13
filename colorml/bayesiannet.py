@@ -176,24 +176,3 @@ def train_model(
     return model
 
 
-def measure_performance(model, X, y_true):
-    mae = model.metric("mae", X, y_true)
-    mse = model.metric("mse", X, y_true)
-    prediction = model.predict(X)
-
-    stdev = prediction.std()
-
-    corr0 = stats.pearsonr(prediction[:, 0], y_true[:, 0])[0]
-    corr1 = stats.pearsonr(prediction[:, 1], y_true[:, 1])[0]
-    corr2 = stats.pearsonr(prediction[:, 2], y_true[:, 2])[0]
-
-    return {
-        "mae": mae,
-        "mse": mse,
-        "std": stdev,
-        "mae_std_ratio": mae / stdev,
-        "pearson_corr0": corr0,
-        "pearson_corr1": corr1,
-        "pearson_corr2": corr2,
-    }
-
