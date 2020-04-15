@@ -322,7 +322,7 @@ def predict_with_uncertainty(
     """
     result = []
 
-    f = K.function([mlp.layers[0].input, K.learning_phase()], [mlp.layers[-1].output])
+    f = K.function([mlp.layers[0].input, K.learning_phase()], [mlp.layers[-1].output[:,:3]])
 
     for i in range(n_iter):
         result.append(f([x, 1]))
