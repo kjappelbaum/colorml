@@ -1,2 +1,0 @@
-node	[Ca]
-linker	[O-]C(=O)c1ccc(cc1)S(=O)(=O)c1ccc(cc1)C(=O)[O-]

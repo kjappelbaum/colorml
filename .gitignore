@@ -382,4 +382,5 @@ tags
 *.pdf
 *.joblib
 *.dill
-
+*.npy
+*.csv
