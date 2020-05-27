@@ -17,7 +17,7 @@ from keras.optimizers import Adam
 from keras.regularizers import l1
 from numpy.random import seed
 
-from colorml.utils import (augment_data, get_timestamp_string, huber_fn, mapping_to_target_range,
+from ..utils.utils import (augment_data, get_timestamp_string, huber_fn, mapping_to_target_range,
                            mapping_to_target_range_sig, plot_predictions, read_pickle)
 
 

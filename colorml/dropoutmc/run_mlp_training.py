@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Train the MLP with Dropout MC"""
 from __future__ import absolute_import
 
 import logging
@@ -19,10 +20,10 @@ from numpy.random import seed
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
-from .descriptornames import *
+from ..utils.descriptornames import *
+from ..utils.utils import (augment_data, flatten, make_if_not_exists, measure_performance2, parse_config, read_pickle,
+                           select_features)
 from .dropout_mlp import build_model, train_model
-from .utils import (augment_data, flatten, make_if_not_exists, measure_performance2, parse_config, read_pickle,
-                    select_features)
 
 colourspace = first_item(filter_RGB_colourspaces('sRGB').values())
 

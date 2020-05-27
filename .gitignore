@@ -384,3 +384,6 @@ tags
 *.dill
 *.npy
 *.csv
+
+logs/
+work/

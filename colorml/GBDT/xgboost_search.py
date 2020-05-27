@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Use the cometml optimizer to search over the GBDT parameterspace"""
 from __future__ import absolute_import
 
 import os
@@ -7,13 +8,12 @@ import numpy as np
 import pandas as pd
 from comet_ml import Optimizer
 from lightgbm import LGBMRegressor
-from sklearn.feature_selection import RFECV, VarianceThreshold
+from sklearn.feature_selection import VarianceThreshold
 from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.preprocessing import StandardScaler
-from xgboost import XGBRegressor
 
-from .descriptornames import *
+from ..utils.descriptornames import *
 
 RANDOM_SEED = int(821996)
 

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Submit the BNN training on the Deneb HPC cluster at EPFL using the GPU partition"""
 from __future__ import absolute_import
 
 import os
@@ -9,7 +10,7 @@ from pathlib import Path
 import click
 import ruamel.yaml as yaml
 
-from colorml.utils import (get_timestamp_string, make_if_not_exists, parse_config)
+from ..utils.utils import (get_timestamp_string, make_if_not_exists, parse_config)
 
 BASEFOLDER = '/scratch/kjablonk/colorml/colorml'
 SUBMISSION = """#!/bin/bash -l

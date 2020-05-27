@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
+"""Run the training of the ML with Dropout MC on the EPFL HPC cluster deneb with GPU partition"""
 from __future__ import absolute_import
 
 import os
 import subprocess
 import time
-from pathlib import Path
 
 import click
 import ruamel.yaml as yaml
 
-from colorml.utils import (get_timestamp_string, make_if_not_exists, parse_config)
+from ..utils.utils import (get_timestamp_string, make_if_not_exists, parse_config)
 
 BASEFOLDER = '/scratch/kjablonk/colorml/colorml'
 SUBMISSION = """#!/bin/bash -l
@@ -65,8 +65,8 @@ features = [
 
 @click.command('cli')
 @click.option('--submit', is_flag=True)
-def main(submit=False):
-    for i, scaler in enumerate(scalers):
+def main(submit=False):  # pylint:disable-too-many-locals
+    for i, scaler in enumerate(scalers):  # pylint:disable=too-many-nested-blocks
         for j, architecture in enumerate(architectures):
             for k, colorspace in enumerate(colorspaces):
                 for l, l1 in enumerate(l1s):
@@ -113,15 +113,15 @@ def write_submission_script(configfile, basename):
     return slurmfile
 
 
-def write_config_file(
-    basename,
-    scaler,
-    architecture,
-    colorspace,
-    l1,
-    lr,
-    feature,
-    augment,
+def write_config_file(  # pylint:disable=too-many-arguments
+        basename,
+        scaler,
+        architecture,
+        colorspace,
+        l1,
+        lr,
+        feature,
+        augment,
 ):
     config = parse_config('/scratch/kjablonk/colorml/colorml/models/models/mlp_base.yaml')
     config['scaler'] = scaler

@@ -16,8 +16,8 @@ from sklearn.multioutput import MultiOutputRegressor
 from sklearn.preprocessing import StandardScaler
 from xgboost import XGBRegressor
 
-from .descriptornames import *
-from .utils import augment_data, plot_predictions, read_pickle
+from ..utils.descriptornames import *
+from ..utils.utils import augment_data, plot_predictions, read_pickle
 
 PARAMETERS = {
     'colsample_bytree': 0.8812456128806658,

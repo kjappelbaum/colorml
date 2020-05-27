@@ -1,21 +1,22 @@
 # -*- coding: utf-8 -*-
+"""Code to train BNN with probflow using variational inference"""
 from __future__ import absolute_import
 
 from functools import partial
 
+import probflow as pf
 import tensorflow as tf
-from comet_ml import Experiment
+from comet_ml import Experiment  # pylint:disable=unused-import
 from numpy.random import seed
+from probflow.callbacks import (EarlyStopping, KLWeightScheduler, LearningRateScheduler, MonitorELBO, MonitorMetric)
 from scipy import stats
 from six.moves import range, zip
 
-import probflow as pf
 import tensorflow_addons as tfa
-from probflow.callbacks import (EarlyStopping, KLWeightScheduler, LearningRateScheduler, MonitorELBO, MonitorMetric)
 
-from .clr import cyclic_learning_rate
-from .kl_anneal import cycle_kl_anneal, linear_kl_anneal, monotonical_kl_anneal
-from .utils import mapping_to_target_range
+from ..utils.clr import cyclic_learning_rate
+from .utils.kl_anneal import (cycle_kl_anneal, linear_kl_anneal, monotonical_kl_anneal)
+from .utils.utils import mapping_to_target_range
 
 
 class DenseNetworkConstrained(pf.Module):

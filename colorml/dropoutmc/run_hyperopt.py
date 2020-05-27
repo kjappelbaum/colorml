@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Use hyperopt to optimize the MLP with Dropout MC"""
 from __future__ import absolute_import, print_function
 
 import sys
@@ -23,10 +24,11 @@ from keras.utils import np_utils
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 
-from colorml.descriptornames import *
-from colorml.utils import (augment_data, get_timestamp_string, huber_fn, mapping_to_target_range,
-                           mapping_to_target_range_sig, plot_predictions, read_pickle)
 from hyperopt import STATUS_OK, Trials, fmin, hp, tpe
+
+from ..utils.descriptornames import *
+from ..utils.utils import (augment_data, get_timestamp_string, huber_fn, mapping_to_target_range,
+                           mapping_to_target_range_sig, plot_predictions, read_pickle)
 
 lrelu = lambda x: tf.keras.activations.relu(x, alpha=0.1)
 

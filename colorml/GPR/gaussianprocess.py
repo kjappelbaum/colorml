@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Use sklearn to train simple GPR models (more advanced ones, like with coregionalized kernels are in Notebooks which I often ran on Google CoLab)"""
 from __future__ import absolute_import
 
 import os
@@ -6,22 +7,19 @@ import sys
 
 import click
 import joblib
-import numpy as np
 import pandas as pd
 from comet_ml import Experiment
-from sklearn.decomposition import PCA
+from mlxtend.feature_selection import SequentialFeatureSelector as SFS
 from sklearn.feature_selection import VarianceThreshold
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF
 from sklearn.gaussian_process.kernels import ConstantKernel as C
 from sklearn.gaussian_process.kernels import (DotProduct, ExpSineSquared, Matern, RationalQuadratic, WhiteKernel)
-from sklearn.neighbors import KNeighborsRegressor
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
-from colorml.descriptornames import *
-from colorml.utils import (augment_data, get_timestamp_string, huber_fn, mapping_to_target_range,
+from ..utils.descriptornames import *
+from ..utils.utils import (augment_data, get_timestamp_string, huber_fn, mapping_to_target_range,
                            mapping_to_target_range_sig, plot_predictions, read_pickle)
-from mlxtend.feature_selection import SequentialFeatureSelector as SFS
 
 sys.path.append('../')
 

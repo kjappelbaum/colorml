@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+"""Run the training of BNN"""
+# pylint:disable=logging-format-interpolation
 from __future__ import absolute_import
 
 import logging
@@ -8,8 +10,7 @@ import click
 import dill
 import joblib
 import pandas as pd
-from colour.models import (Lab_to_XYZ, RGB_to_HSL, RGB_to_HSV, RGB_to_XYZ, XYZ_to_Lab, XYZ_to_RGB,
-                           XYZ_to_xy)
+from colour.models import (RGB_to_HSL, RGB_to_HSV, RGB_to_XYZ, XYZ_to_Lab, XYZ_to_RGB, XYZ_to_xy)
 from colour.plotting import filter_RGB_colourspaces
 from colour.utilities import first_item
 from comet_ml import Experiment
@@ -17,10 +18,10 @@ from numpy.random import seed
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
-from .bayesiannet import build_model, train_model
 from ..utils.descriptornames import *
 from ..utils.utils import (augment_data, flatten, make_if_not_exists, measure_performance, parse_config, read_pickle,
-                    select_features)
+                           select_features)
+from .bayesiannet import build_model, train_model
 
 colourspace = first_item(filter_RGB_colourspaces('sRGB').values())
 
