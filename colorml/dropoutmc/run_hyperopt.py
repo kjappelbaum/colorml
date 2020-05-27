@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# pylint:disable=unused-import
 """Use hyperopt to optimize the MLP with Dropout MC"""
 from __future__ import absolute_import, print_function
 
@@ -9,14 +10,13 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 from comet_ml import Experiment
+from hyperopt import STATUS_OK, Trials, fmin, hp, tpe
 from keras import Sequential
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau
-# from livelossplot.keras import PlotLossesCallback
 from keras.constraints import MinMaxNorm
 from keras.datasets import mnist
 from keras.initializers import Constant
-from keras.layers import (Activation, BatchNormalization, Dense, Dropout, GaussianDropout, GaussianNoise, Input,
-                          LeakyReLU, concatenate)
+from keras.layers import (Activation, Dense, Dropout, GaussianDropout, GaussianNoise, Input, LeakyReLU, concatenate)
 from keras.models import Model
 from keras.optimizers import Adam, RMSprop
 from keras.regularizers import l1
@@ -24,9 +24,7 @@ from keras.utils import np_utils
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 
-from hyperopt import STATUS_OK, Trials, fmin, hp, tpe
-
-from ..utils.descriptornames import *
+from ..utils.descriptornames import *  # pylint:disable=unused-wildcard-import
 from ..utils.utils import (augment_data, get_timestamp_string, huber_fn, mapping_to_target_range,
                            mapping_to_target_range_sig, plot_predictions, read_pickle)
 
@@ -47,9 +45,6 @@ def data():
 
     X_test = df_test[CHEMICAL_FEATURES]
     y_test = df_test[['r', 'g', 'b']]
-
-    name_train = df_train['color_cleaned']
-    name_test = df_test['color_cleaned']
 
     scaler = MinMaxScaler()
     X_train = scaler.fit_transform(X_train)
@@ -126,7 +121,7 @@ def keras_fmin_fnct(space):
         validation_data=(X_test, Y_test),
     )
 
-    score, mae, mape = mlp.evaluate(X_test, Y_test, verbose=0)
+    _, mae, _ = mlp.evaluate(X_test, Y_test, verbose=0)
 
     return {'loss': mae, 'status': STATUS_OK, 'model': mlp}
 

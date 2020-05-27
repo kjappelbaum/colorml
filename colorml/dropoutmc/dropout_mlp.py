@@ -1,8 +1,16 @@
 # -*- coding: utf-8 -*-
+# pylint:disable=unused-import
 """Build MLP and use, following Gal and Ghahramani (2016) https://arxiv.org/pdf/1506.02142.pdf,
 the dropout as an approximation for Bayesian inference.
 I'd recommend sticking to ReLU activation, as this is what they originally explored (see also Gal's blog posts)
 This method is still debated, but it is much easier to train than variational models.
+
+Also, if you decide to use the selfnormalization of SeLU there are a couple of things to consider:
+- Network has to be a MLP
+- Use LeCun normal initialization
+- Alpha Dropout needs to be used
+
+(This is not implemented here in this version of the code)
 """
 from __future__ import absolute_import
 
@@ -12,13 +20,20 @@ from keras import Sequential
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau
 from keras.constraints import MinMaxNorm
 from keras.initializers import Constant
-from keras.layers import (Activation, BatchNormalization, Dense, Dropout, GaussianDropout)
+from keras.layers import Activation, Dense, Dropout, GaussianDropout
 from keras.optimizers import Adam
 from keras.regularizers import l1
 from numpy.random import seed
 
-from ..utils.utils import (augment_data, get_timestamp_string, huber_fn, mapping_to_target_range,
-                           mapping_to_target_range_sig, plot_predictions, read_pickle)
+from ..utils.utils import (
+    augment_data,
+    get_timestamp_string,
+    huber_fn,
+    mapping_to_target_range,
+    mapping_to_target_range_sig,
+    plot_predictions,
+    read_pickle,
+)
 
 
 def build_model(
@@ -26,7 +41,7 @@ def build_model(
     layers=[64, 32, 16, 8],
     dropout: float = 0.2,
     gaussian_dropout: bool = False,
-    kernel_init='he_normal',
+    kernel_init="he_normal",
     l1rate: float = 0.001,
 ):
     mlp = Sequential()
@@ -34,42 +49,47 @@ def build_model(
     mlp.add(
         Dense(
             layers[0],
-            activation='linear',
+            activation="linear",
             kernel_initializer=kernel_init,
             input_shape=(n_features,),
             activity_regularizer=l1(l1rate),
-        ))
-    mlp.add(Activation('relu'))
+        )
+    )
+    mlp.add(Activation("relu"))
     if not gaussian_dropout:
         mlp.add(Dropout(dropout))
     else:
         mlp.add(GaussianDropout(dropout))
 
     for layer in layers[1:]:
-        mlp.add(Dense(
-            layer,
-            activation='linear',
-            kernel_initializer=kernel_init,
-            activity_regularizer=l1(l1rate),
-        ))
-        mlp.add(Activation('relu'))
+        mlp.add(
+            Dense(
+                layer,
+                activation="linear",
+                kernel_initializer=kernel_init,
+                activity_regularizer=l1(l1rate),
+            )
+        )
+        mlp.add(Activation("relu"))
         if not gaussian_dropout:
             mlp.add(Dropout(dropout))
         else:
             mlp.add(GaussianDropout(dropout))
 
-    mlp.add(Dense(3, activation=mapping_to_target_range, kernel_initializer=kernel_init))
+    mlp.add(
+        Dense(3, activation=mapping_to_target_range, kernel_initializer=kernel_init)
+    )
 
     return mlp
 
 
-def train_model(
+def train_model(  # pylint:disable=too-many-locals, too-many-arguments
     experiment,
     mlp,
     train_data: tuple,
     valid_data: tuple,
     logger,
-    loss=huber_fn,
+    loss=huber_fn,  # pylint:disable=unused-argument
     lr: float = 3e-3,
     epochs: int = 500,
     batch_size: int = 264,
@@ -94,30 +114,36 @@ def train_model(
 
     assert X_train.shape[1] == X_valid.shape[1]
 
-    logger.info('Will now start training.')
+    logger.info("Will now start training.")
 
     mlp.compile(
         optimizer=Adam(learning_rate=lr),
         loss=huber_fn,
-        metrics=['mae', 'mean_absolute_percentage_error'],
+        metrics=["mae", "mean_absolute_percentage_error"],
     )
 
     callbacks = []
 
     if isinstance(early_stopping, int):
-        callbacks.append(EarlyStopping(monitor='val_loss', patience=early_stopping, verbose=0, mode='auto'))
+        callbacks.append(
+            EarlyStopping(
+                monitor="val_loss", patience=early_stopping, verbose=0, mode="auto"
+            )
+        )
 
     if isinstance(reduce_lr, dict):
-        callbacks.append(learning_rate_reduction=ReduceLROnPlateau(
-            monitor='val_loss',
-            patience=reduce_lr['patience'],
-            verbose=1,
-            factor=reduce_lr['factor'],
-            min_lr=reduce_lr['min_lr'],
-        ))
+        callbacks.append(
+            learning_rate_reduction=ReduceLROnPlateau(
+                monitor="val_loss",
+                patience=reduce_lr["patience"],
+                verbose=1,
+                factor=reduce_lr["factor"],
+                min_lr=reduce_lr["min_lr"],
+            )
+        )
 
     with experiment.train():
-        history = mlp.fit(
+        _ = mlp.fit(
             X_train,
             y_train,
             callbacks=callbacks,

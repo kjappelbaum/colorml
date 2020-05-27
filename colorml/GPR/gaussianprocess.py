@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
-"""Use sklearn to train simple GPR models (more advanced ones, like with coregionalized kernels are in Notebooks which I often ran on Google CoLab)"""
+# pylint:disable=unused-import
+"""Use sklearn to train simple GPR models (more advanced ones, like with coregionalized kernels are in Notebooks which I often ran on Google CoLab)
+
+Note that sklearn doesn't do anything special in case of multioutpu GPR, e.g., it doesn't apply coregionalized kernels or something like that.
+"""
 from __future__ import absolute_import
 
 import os
@@ -17,7 +21,7 @@ from sklearn.gaussian_process.kernels import ConstantKernel as C
 from sklearn.gaussian_process.kernels import (DotProduct, ExpSineSquared, Matern, RationalQuadratic, WhiteKernel)
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
-from ..utils.descriptornames import *
+from ..utils.descriptornames import *  # pylint:disable=unused-wildcard-import
 from ..utils.utils import (augment_data, get_timestamp_string, huber_fn, mapping_to_target_range,
                            mapping_to_target_range_sig, plot_predictions, read_pickle)
 
@@ -87,4 +91,4 @@ def main(infile, outdir):
 
 
 if __name__ == '__main__':
-    main()
+    main()  # pylint:disable=no-value-for-parameter

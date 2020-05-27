@@ -8,12 +8,11 @@ import numpy as np
 import pandas as pd
 from comet_ml import Optimizer
 from lightgbm import LGBMRegressor
-from sklearn.feature_selection import VarianceThreshold
 from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.preprocessing import StandardScaler
 
-from ..utils.descriptornames import *
+from ..utils.descriptornames import *  # pylint:disable=unused-wildcard-import
 
 RANDOM_SEED = int(821996)
 
@@ -27,6 +26,7 @@ RANDOM_SEED = int(821996)
 #     + summed_metalcenter_descriptors
 # )
 
+# The selection below comes from an initial LightGBM model, where we simply drop the 150 least important features.
 CHEMICAL_FEATURES = [
     'mc_CRY-chi-0-all',
     'mc_CRY-chi-1-all',
@@ -391,7 +391,7 @@ def main():
     # (You can leave out API_KEY if you already set it)
     opt = Optimizer(config, api_key=os.environ['COMET_API_KEY'], project_name='color-ml')
 
-    for i, experiment in enumerate(opt.get_experiments()):
+    for _, experiment in enumerate(opt.get_experiments()):
         experiment.log_parameter('colorspace', 'rgb')
         params = {
             'n_estimators': experiment.get_parameter('n_estimators'),
