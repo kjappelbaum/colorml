@@ -25,7 +25,7 @@ from colormath.color_objects import LabColor, sRGBColor
 from comet_ml import Experiment
 from numpy.random import seed
 from scipy import stats
-from six.moves import range
+from six.moves import range, zip
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from sklearn.preprocessing import StandardScaler
 from webcolors import rgb_to_hex
@@ -120,6 +120,15 @@ def get_delta_e(rgba, rgbb, upscaled=False):
     delta_e = delta_e_cie2000(color1_lab, color2_lab)
 
     return delta_e
+
+
+def pairwise_delta_es(test, prediction):
+    differences = []
+
+    for ca, cb in zip(test, prediction):
+        differences.append(get_delta_e(ca, cb))
+
+    return differences
 
 
 def mapping_to_target_range(x, target_min=0, target_max=1):

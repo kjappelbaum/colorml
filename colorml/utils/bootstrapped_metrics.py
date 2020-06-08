@@ -15,6 +15,8 @@ from six.moves import range
 from sklearn.metrics import (mean_absolute_error, mean_squared_error, median_absolute_error, r2_score)
 from tqdm import tqdm
 
+from .utils import pairwise_delta_es
+
 
 def get_metrics_dict(model, X: np.array, y_true: np.array, experiment) -> dict:
     with experiment.test():
@@ -24,8 +26,16 @@ def get_metrics_dict(model, X: np.array, y_true: np.array, experiment) -> dict:
         mae = mean_absolute_error(y_true, prediction)
         mse = mean_squared_error(y_true, prediction)
         mdae = median_absolute_error(y_true, prediction)
+        differences = pairwise_delta_es(y_true, prediction)
 
-    return {'r2': r2, 'mae': mae, 'mse': mse, 'mdae': mdae}
+    return {
+        'r2': r2,
+        'mae': mae,
+        'mse': mse,
+        'mdae': mdae,
+        'median_delta_e': np.median(differences),
+        'mean_delta_e': np.mean(differences)
+    }
 
 
 def get_bootstrap_sample(X: np.array, y: np.array) -> Union[np.array, np.array]:
@@ -65,4 +75,4 @@ def main(modelpath, xpath, ypath, outname):
 
 
 if __name__ == '__main__':
-    main()
+    main()  # pylint:disable=no-value-for-parameter
