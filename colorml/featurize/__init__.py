@@ -1,24 +1,29 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
 
+import os
 from glob import glob
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from six.moves import zip
-from ..utils import make_temp_directory, temp
 import pybel
 from mofid.run_mofid import cif2mofid
-
 from molSimplify.Informatics.MOF.MOF_descriptors import get_MOF_descriptors
-
 from pymatgen.io.cif import CifParser
+from six.moves import zip
+
+from ..utils.utils import make_temp_directory, temp
+
+
+class FeaturizationException(Exception):
+    pass
 
 
 def get_primitive(datapath, writepath):
     s = CifParser(datapath, occupancy_tolerance=1).get_structures()[0]
     sprim = s.get_primitive_structure()
-    sprim.to("cif", writepath)
+    sprim.to('cif', writepath)
 
 
 def openbabel_count_bond_order(mol, bo=2):
@@ -72,29 +77,29 @@ def get_group_counts(mol):
 
     mole = mol.OBMol
     group_dict = {
-        "primary_amide": 0,
-        "secondary_amide": 0,
-        "tertiary_amide": 0,
-        "ester": 0,
-        "carbonyl": 0,
+        'primary_amide': 0,
+        'secondary_amide': 0,
+        'tertiary_amide': 0,
+        'ester': 0,
+        'carbonyl': 0,
     }
     for bond in ob.OBMolBondIter(mole):
         if bond.IsPrimaryAmide():
-            group_dict["primary_amide"] += 1
+            group_dict['primary_amide'] += 1
         elif bond.IsSecondaryAmide():
-            group_dict["primary_amide"] += 1
+            group_dict['primary_amide'] += 1
         elif bond.IsTertiaryAmide():
-            group_dict["tertiary_amide"] += 1
+            group_dict['tertiary_amide'] += 1
         elif bond.IsEster():
-            group_dict["ester"] += 1
+            group_dict['ester'] += 1
         elif bond.IsCarbonyl():
-            group_dict["carbonyl"] += 1
+            group_dict['carbonyl'] += 1
 
     return group_dict
 
 
 def get_molecular_descriptors(smiles):
-    mymol = pybel.readstring("smi", smiles)
+    mymol = pybel.readstring('smi', smiles)
 
     descriptordict = {}
 
@@ -104,12 +109,12 @@ def get_molecular_descriptors(smiles):
     aromatic_rings = openbabel_count_aromatic_rings(mymol)
 
     descriptordict.update(group_counts)
-    descriptordict["logP"] = desc["logP"]
-    descriptordict["MR"] = desc["MR"]
-    descriptordict["dbratio"] = db_ratio
-    descriptordict["aromatic_rings"] = aromatic_rings
-    descriptordict["dbonds"] = desc["dbonds"]
-    descriptordict["abonds"] = desc["abonds"]
+    descriptordict['logP'] = desc['logP']
+    descriptordict['MR'] = desc['MR']
+    descriptordict['dbratio'] = db_ratio
+    descriptordict['aromatic_rings'] = aromatic_rings
+    descriptordict['dbonds'] = desc['dbonds']
+    descriptordict['abonds'] = desc['abonds']
 
     return descriptordict
 
@@ -117,17 +122,17 @@ def get_molecular_descriptors(smiles):
 def get_smiles_features(cif):
     mofid = cif2mofid(cif)
 
-    name = mofid["cifname"]
+    name = mofid['cifname']
 
     linker_descriptors = []
 
     try:
-        for linker in mofid["smiles_linkers"]:
+        for linker in mofid['smiles_linkers']:
             linker_descriptors.append(list(get_molecular_descriptors(linker).values()))
             # super inefficient to do this all the time. But i do not know if i'll change the descriptorlist ...
             keys = list(get_molecular_descriptors(linker).keys())
-            mean_keys = [s + "_mean" for s in keys]
-            sum_keys = [s + "_sum" for s in keys]
+            mean_keys = [s + '_mean' for s in keys]
+            sum_keys = [s + '_sum' for s in keys]
 
         linker_descriptors = np.array(linker_descriptors)
         means = np.mean(linker_descriptors, axis=0)
@@ -137,7 +142,7 @@ def get_smiles_features(cif):
         sum_dict = dict(list(zip(sum_keys, sums)))
 
         result_dict = {}
-        result_dict["name"] = name
+        result_dict['name'] = name
 
         result_dict.update(sum_dict)
         result_dict.update(mean_dict)
@@ -163,39 +168,40 @@ def get_moldesc(cifs):
 def get_racs(cif):
     """Assumes that cif is primitive. As there is no way in molsimplify to stop writing stuff, we do it in some temporary directory"""
     featurization_list = []
+    # need to catch and handle exceptions
+
     with make_temp_directory() as temp_dir:
         full_names, full_descriptors = get_MOF_descriptors(
             cif,  # inputstructure
             3,  # scope
             path=temp_dir,  # stuff will be dumped here
-            xyzpath=temp_dir,
+            xyzpath=os.path.join(temp_dir, 'file.xyz'),
         )
-        full_names.append("filename")
-        full_descriptors.append(cif)
+        full_names.append('filename')
+        full_descriptors.append(Path(cif).stem)
         featurization = dict(zip(full_names, full_descriptors))
         featurization_list.append(featurization)
 
     df = pd.DataFrame(featurization_list)
-    keep = [
-        val
-        for val in df.columns.values
-        if ("mc" in val) or ("lc" in val) or ("f-lig" in val) or ("func") in val
-    ]
-    df = df[["filename"] + keep]
+    keep = [val for val in df.columns.values if ('mc' in val) or ('lc' in val) or ('f-lig' in val) or ('func' in val)]
+    df = df[['filename'] + keep]
     return df
 
 
 def merge_racs_moldesc(df_moldesc, df_racs):
-    df_merged = pd.merge(df_racs, df_moldesc, left_on="filename", right_on="name")
+    df_merged = pd.merge(df_racs, df_moldesc, left_on='filename', right_on='name')
     return df_merged
 
 
 def get_color_descriptors(cif):
-    with temp() as tempfile:
-        get_primitive(cif, tempfile)
-        moldesc = get_moldesc([tempfile])
-        racs = get_racs(tempfile)
+    try:
+        with temp() as tempfile:
+            tempname = tempfile.name
+            get_primitive(cif, tempname)
+            moldesc = get_moldesc([tempname])
+            racs = get_racs(tempname)
+        df_features = merge_racs_moldesc(moldesc, racs)
 
-    df_features = merge_racs_moldesc(moldesc, racs)
-
-    return df_features
+        return df_features
+    except Exception:
+        raise FeaturizationException("Could not featurize the structure")

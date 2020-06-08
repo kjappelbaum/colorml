@@ -1,7 +1,1 @@
-node	[CuH2]
-node	[CuH]
-node	[Cu]
-node	[Cu][Cu]
-linker	[O-]C(=O)c1cc(cc(c1)C(=O)[O-])c1ccc(cc1)C=Cc1ccc(cc1)[C]1C=NN=C1
-linker	[O-]C(=O)c1cc(cc(c1)c1ccc(cc1)C=Cc1ccc(cc1)C1=CN=N[CH]1)C(=O)[O-]
-linker	[O-]C(=O)c1cc(cc(c1)c1ccc(cc1)C=Cc1ccc(cc1)C1=C[N]N=C1)C(=O)[O-]
+node	*
