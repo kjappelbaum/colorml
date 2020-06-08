@@ -12,7 +12,6 @@ import tempfile
 import time
 from typing import Union
 
-import joblib
 import keras.backend as BK
 import matplotlib.patches as mpatch
 import matplotlib.pyplot as plt
@@ -20,13 +19,15 @@ import numpy as np
 import pandas as pd
 import ruamel.yaml as yaml
 import tensorflow as tf
+from colormath.color_conversions import convert_color
+from colormath.color_diff import delta_e_cie2000
+from colormath.color_objects import LabColor, sRGBColor
 from comet_ml import Experiment
-from keras import backend as BK
 from numpy.random import seed
 from scipy import stats
 from six.moves import range
 from sklearn.metrics import mean_absolute_error, mean_squared_error
-from sklearn.preprocessing import MinMaxScaler, StandardScaler
+from sklearn.preprocessing import StandardScaler
 from webcolors import rgb_to_hex
 
 from .descriptornames import *
@@ -96,6 +97,29 @@ def get_timestamp_string():
     t = time.localtime()
     timestamp = time.strftime('%b-%d-%Y_%H%M', t)
     return timestamp
+
+
+def colordistance(rgb1, rgb2):
+    '''d = {} distance between two colors(3)'''
+    rm = 0.5 * (rgb1[0] + rgb2[0])
+    d = np.sum((2 + rm, 4, 3 - rm) * (rgb1 - rgb2)**2)**0.5
+    return d
+
+
+def get_delta_e(rgba, rgbb, upscaled=False):
+    color1_rgb = sRGBColor(rgba[0], rgba[1], rgba[2], is_upscaled=upscaled)
+    color2_rgb = sRGBColor(rgbb[0], rgbb[1], rgbb[2], is_upscaled=upscaled)
+
+    # Convert from RGB to Lab Color Space
+    color1_lab = convert_color(color1_rgb, LabColor)
+
+    # Convert from RGB to Lab Color Space
+    color2_lab = convert_color(color2_rgb, LabColor)
+
+    # Find the color difference
+    delta_e = delta_e_cie2000(color1_lab, color2_lab)
+
+    return delta_e
 
 
 def mapping_to_target_range(x, target_min=0, target_max=1):
