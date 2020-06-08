@@ -7,28 +7,63 @@ import time
 import joblib
 import numpy as np
 import pandas as pd
-from colour.models import RGB_to_HSV
 from comet_ml import Experiment
 from lightgbm import LGBMRegressor
-from sklearn.feature_selection import RFECV, VarianceThreshold
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-from sklearn.model_selection import cross_val_score, train_test_split
+from six.moves import range
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.preprocessing import StandardScaler
-from xgboost import XGBRegressor
 
+from ..utils.bootstrapped_metrics import get_metrics_dict
 from ..utils.descriptornames import *
-from ..utils.utils import augment_data, plot_predictions, read_pickle
+from ..utils.utils import augment_data, read_pickle
 
-PARAMETERS = {
-    'colsample_bytree': 0.38177744189426355,
-    'max_depth': 28,
-    'min_child_weight': 0.009519910628552617,
-    'n_estimators': 1230,
-    'num_leaves': 252,
-    'reg_alpha': 0.0015621818443089072,
-    'reg_lambda': 0.037839844391839766,
-    'subsample': 0.3804212840372488,
+# optimizer id 23b1617dc24a4fc48198650b1e4cc46f, took f46c00e7621147c7b129ff78e7ff4ad7 because the loss is here now greater than the stdev, which makes it seem more stable
+PARAMETERS_01 = {
+    'colsample_bytree': 0.20032975594543911,
+    'max_depth': 30,
+    'min_child_weight': 0.004286551076851089,
+    'n_estimators': 1093,
+    'num_leaves': 423,
+    'reg_alpha': 1.520322189905922e-4,
+    'reg_lambda': 0.056600636753530116,
+    'subsample': 0.2339942750715971,
+}
+
+# optimizer id 11b4e66179b0472a8460e53918dbd5ec, parameters from bb425c091cf64643a932bac757d6a939
+PARAMETERS_MEDIAN = {
+    'colsample_bytree': 0.680864608679754,
+    'max_depth': 49,
+    'min_child_weight': 0.018165986208942688,
+    'n_estimators': 2072,
+    'num_leaves': 314,
+    'reg_alpha': 0.013653685526724718,
+    'reg_lambda': 4.720279281103699e-5,
+    'subsample': 0.5006617953729169,
+}
+
+# https://www.comet.ml/kjappelbaum/color-ml/6c50e8f8c95d4c0687f1ae0e282aa4c3?experiment-tab=params
+PARAMETERS_MEAN = {
+    'colsample_bytree': 0.744316160646511,
+    'max_depth': 29,
+    'min_child_weight': 0.07866198408520107,
+    'n_estimators': 401,
+    'num_leaves': 212,
+    'reg_alpha': 2.891056990373021E-4,
+    'reg_lambda': 0.018399475060451708,
+    'subsample': 0.5969927763050189,
+}
+
+# optimizer id b1941f3a465b4f1bb14dce011cf04e66
+# 59f42095ba82475a9f4a1235a02f1ff0
+PARAMETERS_09 = {
+    'colsample_bytree': 0.32832464825089663,
+    'max_depth': 50,
+    'min_child_weight': 0.012100999863286296,
+    'n_estimators': 4984,
+    'num_leaves': 494,
+    'reg_alpha': 0.0012025842152723375,
+    'reg_lambda': 7.873746383882854E-5,
+    'subsample': 0.7274910185249528,
 }
 
 RANDOM_SEED = int(84996)
@@ -313,9 +348,11 @@ CHEMICAL_FEATURES = [
 AUGMENT_DICT = ('/Users/kevinmaikjablonka/Dropbox (LSMO)/proj75_mofcolor/ml/data/augment_dict.pkl')
 
 
-def process_data(augment=False):
+def process_data(augment=False, size: int = 500):
     df_train = pd.read_csv('/Users/kevinmaikjablonka/Dropbox (LSMO)/proj75_mofcolor/ml/data/development_set.csv')
     df_test = pd.read_csv('/Users/kevinmaikjablonka/Dropbox (LSMO)/proj75_mofcolor/ml/data/holdout_set.csv')
+
+    df_train = df_train.sample(size)
 
     if augment:
         augment_dict = read_pickle(AUGMENT_DICT)
@@ -324,120 +361,66 @@ def process_data(augment=False):
     X_train = df_train[CHEMICAL_FEATURES]
     X_test = df_test[CHEMICAL_FEATURES]
 
-    yscaler = StandardScaler()
-    y_train = yscaler.fit_transform(RGB_to_HSV(df_train[['r', 'g', 'b']]))
-    y_test = yscaler.transform(RGB_to_HSV(df_test[['r', 'g', 'b']]))
+    y_train = df_train[['r', 'g', 'b']] / 255
+    y_test = df_test[['r', 'g', 'b']] / 255
 
     scaler = StandardScaler()
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)
 
-    return scaler, yscaler, X_train, X_test, y_train, y_test, df_test
+    return scaler, None, X_train, X_test, y_train, y_test, df_test
 
 
-def fit(x_train, y_train, parameters):
-    regressor_mean = MultiOutputRegressor(LGBMRegressor(**parameters))
-    regressor_mean.fit(x_train, y_train)
+def fit(x_train, y_train):
 
-    regressor_median = MultiOutputRegressor(LGBMRegressor(objective='quantile', alpha=0.5, **parameters))
+    regressor_median = MultiOutputRegressor(LGBMRegressor(objective='quantile', alpha=0.5, **PARAMETERS_MEDIAN))
     regressor_median.fit(x_train, y_train)
 
-    regressor_0_1 = MultiOutputRegressor(LGBMRegressor(objective='quantile', alpha=0.1, **parameters))
-    regressor_0_1.fit(x_train, y_train)
-
-    regressor_0_9 = MultiOutputRegressor(LGBMRegressor(objective='quantile', alpha=0.9, **parameters))
-    regressor_0_9.fit(x_train, y_train)
-
-    return regressor_mean, regressor_median, regressor_0_1, regressor_0_9
+    return regressor_median
 
 
 def main():
-    STARTTIME = time.strftime('run_%Y_%m_%d_%H_%M_%s')
-    scaler, yscaler, X_train, X_test, y_train, y_test, df_test = process_data()
+    STARTTIME0 = time.strftime('run_%Y_%m_%d_%H_%M_%s')
+    METRICS = []
+    for ts_size in [10, 100, 200, 500, 1000, 2000, 5000]:
+        for iteration in range(10):
+            STARTTIME = STARTTIME0 + 'ts_' + str(ts_size) + '_iter_' + str(iteration)
+            scaler, _, X_train, X_test, y_train, y_test, df_test = process_data(ts_size)
 
-    joblib.dump(scaler, 'scaler_' + STARTTIME + '.joblib')
+            joblib.dump(scaler, 'scaler_' + STARTTIME + '.joblib')
 
-    joblib.dump(yscaler, 'yscaler_' + STARTTIME + '.joblib')
-    np.save('X_train_' + STARTTIME + '.npy', X_train)
-    np.save('X_test_' + STARTTIME + '.npy', X_test)
-    np.save('y_train_' + STARTTIME + '.npy', y_train)
-    np.save('y_test_' + STARTTIME + '.npy', y_test)
-    np.save('y_names_' + STARTTIME + '.npy', df_test['color_cleaned'])
+            np.save('X_train_' + STARTTIME + '.npy', X_train)
+            np.save('X_test_' + STARTTIME + '.npy', X_test)
+            np.save('y_train_' + STARTTIME + '.npy', y_train)
+            np.save('y_test_' + STARTTIME + '.npy', y_test)
+            np.save('y_names_' + STARTTIME + '.npy', df_test['color_cleaned'])
 
-    experiment = Experiment(api_key=os.environ['COMET_API_KEY'], project_name='color-ml')
+            experiment = Experiment(api_key=os.environ['COMET_API_KEY'], project_name='color-ml')
 
-    experiment.log_asset('scaler_' + STARTTIME + '.joblib')
+            experiment.log_asset('scaler_' + STARTTIME + '.joblib')
 
-    experiment.log_asset('yscaler_' + STARTTIME + '.joblib')
-    experiment.log_asset('X_train_' + STARTTIME + '.npy')
-    experiment.log_asset('X_test_' + STARTTIME + '.npy')
-    experiment.log_asset('y_train_' + STARTTIME + '.npy')
-    experiment.log_asset('y_test_' + STARTTIME + '.npy')
-    experiment.log_asset('y_names_' + STARTTIME + '.npy')
+            experiment.log_asset('X_train_' + STARTTIME + '.npy')
+            experiment.log_asset('X_test_' + STARTTIME + '.npy')
+            experiment.log_asset('y_train_' + STARTTIME + '.npy')
+            experiment.log_asset('y_test_' + STARTTIME + '.npy')
+            experiment.log_asset('y_names_' + STARTTIME + '.npy')
 
-    experiment.log_parameters(PARAMETERS)
+            experiment.log_parameters(PARAMETERS_MEDIAN)
 
-    with experiment.train():
-        regressor_mean, regressor_median, regressor_0_1, regressor_0_9 = fit(X_train, y_train, PARAMETERS)
+            with experiment.train():
+                regressor_median = fit(X_train, y_train)
 
-    joblib.dump(regressor_mean, 'regressor_mean' + STARTTIME + '.joblib')
-    joblib.dump(regressor_median, 'regressor_median' + STARTTIME + '.joblib')
-    joblib.dump(regressor_0_1, 'regressor_0_1' + STARTTIME + '.joblib')
-    joblib.dump(regressor_0_9, 'regressor_0_9' + STARTTIME + '.joblib')
+            metrics_dict = get_metrics_dict(regressor_median, X_test, y_test, experiment)
+            metrics_dict['iteration'] = iteration
+            metrics_dict['ts_size'] = ts_size
 
-    experiment.log_asset('regressor_mean' + STARTTIME + '.joblib')
-    experiment.log_asset('regressor_median' + STARTTIME + '.joblib')
-    experiment.log_asset('regressor_0_1' + STARTTIME + '.joblib')
-    experiment.log_asset('regressor_0_9' + STARTTIME + '.joblib')
+            METRICS.append(metrics_dict)
+            joblib.dump(regressor_median, 'regressor_median' + STARTTIME + '.joblib')
+            experiment.log_asset('regressor_median' + STARTTIME + '.joblib')
 
-    with experiment.test():
-        mean_predict = regressor_mean.predict(X_test)
-        r2 = r2_score(y_test, mean_predict)
-        mae = mean_absolute_error(y_test, mean_predict)
-        mse = mean_squared_error(y_test, mean_predict)
-
-        experiment.log_metric('r2_score', r2)
-        experiment.log_metric('mae', mae)
-        experiment.log_metric('mse', mse)
-
-        plot_predictions(
-            yscaler.inverse_transform(mean_predict),
-            yscaler.inverse_transform(y_test),
-            df_test['color_cleaned'].values,
-            outname='mean_' + STARTTIME + '.png',
-        )
-        experiment.log_image('mean_' + STARTTIME + '.png')
-
-        median_predict = regressor_median.predict(X_test)
-
-        plot_predictions(
-            yscaler.inverse_transform(median_predict),
-            yscaler.inverse_transform(y_test),
-            df_test['color_cleaned'].values,
-            outname='median_' + STARTTIME + '.png',
-        )
-
-        experiment.log_image('median_' + STARTTIME + '.png')
-
-        r_0_1_predict = regressor_0_1.predict(X_test)
-
-        plot_predictions(
-            yscaler.inverse_transform(r_0_1_predict),
-            yscaler.inverse_transform(y_test),
-            df_test['color_cleaned'].values,
-            outname='quantile_0_1_' + STARTTIME + '.png',
-        )
-        experiment.log_image('quantile_0_1_' + STARTTIME + '.png')
-
-        r_0_9_predict = regressor_0_9.predict(X_test)
-
-        plot_predictions(
-            yscaler.inverse_transform(r_0_9_predict),
-            yscaler.inverse_transform(y_test),
-            df_test['color_cleaned'].values,
-            outname='quantile_0_9_' + STARTTIME + '.png',
-        )
-        experiment.log_image('quantile_0_9_' + STARTTIME + '.png')
+    df = pd.DataFrame(METRICS)
+    df.to_csv('learningurve_' + STARTTIME0 + '.csv')
+    experiment.log_asset('learningurve_' + STARTTIME0 + '.csv')
 
 
 if __name__ == '__main__':
