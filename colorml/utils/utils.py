@@ -9,6 +9,10 @@ import random
 import time
 from typing import Union
 
+import tempfile
+import contextlib
+import shutil
+
 import joblib
 import keras.backend as BK
 import matplotlib.patches as mpatch
@@ -29,7 +33,28 @@ from webcolors import rgb_to_hex
 from .descriptornames import *
 
 
-def augment_data(df, augment_dict, r_col='r', g_col='g', b_col='b', name_col='color_cleaned'):
+@contextlib.contextmanager
+def make_temp_directory():
+    temp_dir = tempfile.mkdtemp()
+    try:
+        yield temp_dir
+    finally:
+        shutil.rmtree(temp_dir)
+
+
+@contextmanager
+def temp(cleanup=True):
+    tmp = tempfile.NamedTemporaryFile(delete=False)
+    try:
+        yield tmp
+    finally:
+        tmp.close()  # closes the file, so we can right remove it
+        cleanup and os.remove(tmp.name)
+
+
+def augment_data(
+    df, augment_dict, r_col="r", g_col="g", b_col="b", name_col="color_cleaned"
+):
     df_ = df.copy()
 
     new_rows = []
@@ -57,14 +82,16 @@ def tf_augment_random():
 
 
 def read_pickle(file):
-    with open(file, 'rb') as fh:
+    with open(file, "rb") as fh:
         result = pickle.load(fh)
     return result
 
 
 def huber_fn(y_true, y_pred):
     error = y_true - y_pred
-    is_small_error = (tf.abs(error) < 1)  # replace `tf` with `K` where `K = keras.backend`
+    is_small_error = (
+        tf.abs(error) < 1
+    )  # replace `tf` with `K` where `K = keras.backend`
     squared_loss = tf.square(error) / 2  # replace `tf` with `K`
     linear_loss = tf.abs(error) - 0.5  # replace `tf` with `K`
     return tf.where(is_small_error, squared_loss, linear_loss)
@@ -72,7 +99,7 @@ def huber_fn(y_true, y_pred):
 
 def get_timestamp_string():
     t = time.localtime()
-    timestamp = time.strftime('%b-%d-%Y_%H%M', t)
+    timestamp = time.strftime("%b-%d-%Y_%H%M", t)
     return timestamp
 
 
@@ -137,25 +164,25 @@ def plot_predictions(predictions, labels, names, sample=100, outname=None):
     for i in range(len(predictions)):
         r1 = mpatch.Rectangle((0, i), 1, 1, color=predictions[i])
         r2 = mpatch.Rectangle((1, i), 1, 1, color=true[i])
-        txt = ax.text(2, i + 0.5, '  ' + names[i], va='center', fontsize=10)
+        txt = ax.text(2, i + 0.5, "  " + names[i], va="center", fontsize=10)
 
         ax.add_patch(r1)
         ax.add_patch(r2)
-        ax.axhline(i, color='k')
+        ax.axhline(i, color="k")
 
-    ax.text(0.5, i + 1.5, 'prediction', ha='center', va='center')
-    ax.text(1.5, i + 1.5, 'median RGB for label', ha='center', va='center')
+    ax.text(0.5, i + 1.5, "prediction", ha="center", va="center")
+    ax.text(1.5, i + 1.5, "median RGB for label", ha="center", va="center")
     ax.set_xlim(0, 3)
     ax.set_ylim(0, i + 2)
-    ax.axis('off')
+    ax.axis("off")
 
     fig.tight_layout()
 
     if outname is not None:
-        fig.savefig(outname, bbox_inches='tight')
+        fig.savefig(outname, bbox_inches="tight")
 
 
-def flatten(d, parent_key='', sep='_'):
+def flatten(d, parent_key="", sep="_"):
     items = []
     for k, v in d.items():
         new_key = parent_key + sep + k if parent_key else k
@@ -167,7 +194,7 @@ def flatten(d, parent_key='', sep='_'):
 
 
 def parse_config(yml_file):
-    with open(yml_file, 'r') as stream:
+    with open(yml_file, "r") as stream:
         try:
             config = yaml.safe_load(stream)
         except yaml.YAMLError as exc:
@@ -193,15 +220,15 @@ def rgb_to_hex_round(c):
 
 
 def plot_prediction_dist(
-        predictions_dist,
-        label_names,
-        label_dict: dict,
-        sample: int = 100,
-        outname: str = None,
-        centrality: str = 'median',
-        n_samples: int = 10,
-        width: float = 0.2,
-        figsize: tuple = (8, 16),
+    predictions_dist,
+    label_names,
+    label_dict: dict,
+    sample: int = 100,
+    outname: str = None,
+    centrality: str = "median",
+    n_samples: int = 10,
+    width: float = 0.2,
+    figsize: tuple = (8, 16),
 ):
     """Plot figure that compares color of predictions versus acutal colors.
 
@@ -226,12 +253,12 @@ def plot_prediction_dist(
     label_names = label_names.values[:sample]
     label_names_set = set(label_names)
 
-    if centrality == 'median':
+    if centrality == "median":
         prediction_centrality = np.median(predictions, axis=0)
         label_centrality_dict = {}
         for color in label_names_set:
             label_centrality_dict[color] = np.median(label_dict[color], axis=0)
-    elif centrality == 'mean':
+    elif centrality == "mean":
         prediction_centrality = np.mean(predictions, axis=0)
         label_centrality_dict = {}
         for color in label_names_set:
@@ -239,8 +266,12 @@ def plot_prediction_dist(
 
     for i in range(len(label_names)):
         colorname = label_names[i]
-        r1 = mpatch.Rectangle((0, i), 1, 1, color=rgb_to_hex_round(prediction_centrality[i]))
-        r2 = mpatch.Rectangle((1, i), 1, 1, color=rgb_to_hex_round(label_centrality_dict[colorname]))
+        r1 = mpatch.Rectangle(
+            (0, i), 1, 1, color=rgb_to_hex_round(prediction_centrality[i])
+        )
+        r2 = mpatch.Rectangle(
+            (1, i), 1, 1, color=rgb_to_hex_round(label_centrality_dict[colorname])
+        )
 
         ax.add_patch(r1)
         ax.add_patch(r2)
@@ -263,46 +294,46 @@ def plot_prediction_dist(
             ax.add_patch(r3)
             ax.add_patch(r4)
 
-        ax.axhline(i, color='k')
+        ax.axhline(i, color="k")
 
-    ax.text(0.5, i + 1.5, 'prediction {}'.format(centrality), ha='center', va='center')
-    ax.text(1.5, i + 1.5, 'label {}'.format(centrality), ha='center', va='center')
+    ax.text(0.5, i + 1.5, "prediction {}".format(centrality), ha="center", va="center")
+    ax.text(1.5, i + 1.5, "label {}".format(centrality), ha="center", va="center")
 
     ax.text(
         0.5 - n_samples * 3 / 4 * width,
         i + 1.5,
-        'prediction samples',
-        ha='center',
-        va='center',
+        "prediction samples",
+        ha="center",
+        va="center",
     )
     ax.text(
         1.5 + n_samples * 3 / 4 * width,
         i + 1.5,
-        'colorjeopardy samples',
-        ha='center',
-        va='center',
+        "colorjeopardy samples",
+        ha="center",
+        va="center",
     )
 
     ax.set_xlim(0 - n_samples * width, 2 + n_samples * width)
     ax.set_ylim(0, i + 2)
-    ax.axis('off')
+    ax.axis("off")
 
     fig.tight_layout()
 
     if outname is not None:
-        fig.savefig(outname, bbox_inches='tight')
+        fig.savefig(outname, bbox_inches="tight")
 
 
 def plot_prediction_dist(
-        predictions_01,
-        predictions_05,
-        predictions_09,
-        names,
-        label_dict: dict,
-        sample: int = 100,
-        outname: str = None,
-        width: float = 0.2,
-        figsize: tuple = (8, 16),
+    predictions_01,
+    predictions_05,
+    predictions_09,
+    names,
+    label_dict: dict,
+    sample: int = 100,
+    outname: str = None,
+    width: float = 0.2,
+    figsize: tuple = (8, 16),
 ):
 
     fig = plt.figure(figsize=figsize)
@@ -314,9 +345,15 @@ def plot_prediction_dist(
 
     names = names[:sample]
 
-    predictions01 = [rgb_to_hex((int(c[0]), int(c[1]), int(c[2]))) for c in predictions01]
-    predictions05 = [rgb_to_hex((int(c[0]), int(c[1]), int(c[2]))) for c in predictions05]
-    predictions09 = [rgb_to_hex((int(c[0]), int(c[1]), int(c[2]))) for c in predictions09]
+    predictions01 = [
+        rgb_to_hex((int(c[0]), int(c[1]), int(c[2]))) for c in predictions01
+    ]
+    predictions05 = [
+        rgb_to_hex((int(c[0]), int(c[1]), int(c[2]))) for c in predictions05
+    ]
+    predictions09 = [
+        rgb_to_hex((int(c[0]), int(c[1]), int(c[2]))) for c in predictions09
+    ]
 
     # precalculate the percentiles for the labels
     labels_01 = {}
@@ -345,36 +382,35 @@ def plot_prediction_dist(
         r5 = mpatch.Rectangle((1.2, i), 0.2, 1, color=labels_09[name])
         r6 = mpatch.Rectangle((1.4, i), 0.2, 1, color=labels_01[name])
 
-        txt = ax.text(1.6, i + 0.5, '  ' + names[i], va='center', fontsize=10)
+        txt = ax.text(1.6, i + 0.5, "  " + names[i], va="center", fontsize=10)
 
         for patch in [r1, r2, r3, r4, r5, r6]:
             ax.add_patch(patch)
 
-        ax.axhline(i, color='k')
-    ax.text(0.3, i + 3, 'predictions', va='center', fontsize=14)
-    ax.text(0.1, i + 1.5, '0.1', ha='center', va='center', fontsize=12)
-    ax.text(0.3, i + 1.5, '0.9', ha='center', va='center', fontsize=12)
-    ax.text(0.6, i + 1.5, 'median', ha='center', va='center', fontsize=12)
+        ax.axhline(i, color="k")
+    ax.text(0.3, i + 3, "predictions", va="center", fontsize=14)
+    ax.text(0.1, i + 1.5, "0.1", ha="center", va="center", fontsize=12)
+    ax.text(0.3, i + 1.5, "0.9", ha="center", va="center", fontsize=12)
+    ax.text(0.6, i + 1.5, "median", ha="center", va="center", fontsize=12)
 
-    ax.text(1.1, i + 3, 'ground truth', va='center', fontsize=14)
-    ax.text(1.0, i + 1.5, 'median', ha='center', va='center', fontsize=12)
-    ax.text(1.3, i + 1.5, '0.9', ha='center', va='center', fontsize=12)
-    ax.text(1.5, i + 1.5, '0.1', ha='center', va='center', fontsize=12)
+    ax.text(1.1, i + 3, "ground truth", va="center", fontsize=14)
+    ax.text(1.0, i + 1.5, "median", ha="center", va="center", fontsize=12)
+    ax.text(1.3, i + 1.5, "0.9", ha="center", va="center", fontsize=12)
+    ax.text(1.5, i + 1.5, "0.1", ha="center", va="center", fontsize=12)
 
     ax.set_xlim(0, 2)
     ax.set_ylim(0, i + 2)
-    ax.axis('off')
+    ax.axis("off")
 
     fig.tight_layout()
 
     if outname is not None:
-        fig.savefig(outname, bbox_inches='tight')
+        fig.savefig(outname, bbox_inches="tight")
 
 
-def predict_with_uncertainty(mlp,
-                             x: np.array,
-                             n_iter: int = 1000,
-                             centrality: str = 'median') -> Union[np.array, np.array, np.array]:
+def predict_with_uncertainty(
+    mlp, x: np.array, n_iter: int = 1000, centrality: str = "median"
+) -> Union[np.array, np.array, np.array]:
     """Use dropout sampling
 
     Args:
@@ -390,24 +426,26 @@ def predict_with_uncertainty(mlp,
     """
     result = []
 
-    f = K.function([mlp.layers[0].input, K.learning_phase()], [mlp.layers[-1].output[:, :3]])
+    f = K.function(
+        [mlp.layers[0].input, K.learning_phase()], [mlp.layers[-1].output[:, :3]]
+    )
 
     for i in range(n_iter):
         result.append(f([x, 1]))
 
     result = np.array(result)
 
-    if centrality == 'median':
+    if centrality == "median":
         prediction = np.median(result, axis=0)
-    elif centrality == 'mean':
+    elif centrality == "mean":
         prediction = np.mean(result, axis=0)
     uncertainty = result.var(axis=0)
     return result, prediction, uncertainty
 
 
 def measure_performance(model, X, y_true):
-    mae = model.metric('mae', X, y_true)
-    mse = model.metric('mse', X, y_true)
+    mae = model.metric("mae", X, y_true)
+    mse = model.metric("mse", X, y_true)
     prediction = model.predict(X)
 
     stdev = prediction.std()
@@ -417,13 +455,13 @@ def measure_performance(model, X, y_true):
     corr2 = stats.pearsonr(prediction[:, 2], y_true[:, 2])[0]
 
     return {
-        'mae': mae,
-        'mse': mse,
-        'std': stdev,
-        'mae_std_ratio': mae / stdev,
-        'pearson_corr0': corr0,
-        'pearson_corr1': corr1,
-        'pearson_corr2': corr2,
+        "mae": mae,
+        "mse": mse,
+        "std": stdev,
+        "mae_std_ratio": mae / stdev,
+        "pearson_corr0": corr0,
+        "pearson_corr1": corr1,
+        "pearson_corr2": corr2,
     }
 
 
@@ -439,11 +477,11 @@ def measure_performance2(model, X, y_true):
     corr2 = stats.pearsonr(prediction[:, 2], y_true[:, 2])[0]
 
     return {
-        'mae': mae,
-        'mse': mse,
-        'std': stdev,
-        'mae_std_ratio': mae / stdev,
-        'pearson_corr0': corr0,
-        'pearson_corr1': corr1,
-        'pearson_corr2': corr2,
+        "mae": mae,
+        "mse": mse,
+        "std": stdev,
+        "mae_std_ratio": mae / stdev,
+        "pearson_corr0": corr0,
+        "pearson_corr1": corr1,
+        "pearson_corr2": corr2,
     }

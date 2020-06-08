@@ -25,15 +25,8 @@ from keras.optimizers import Adam
 from keras.regularizers import l1
 from numpy.random import seed
 
-from ..utils.utils import (
-    augment_data,
-    get_timestamp_string,
-    huber_fn,
-    mapping_to_target_range,
-    mapping_to_target_range_sig,
-    plot_predictions,
-    read_pickle,
-)
+from ..utils.utils import (augment_data, get_timestamp_string, huber_fn, mapping_to_target_range,
+                           mapping_to_target_range_sig, plot_predictions, read_pickle)
 
 
 def build_model(
@@ -41,7 +34,7 @@ def build_model(
     layers=[64, 32, 16, 8],
     dropout: float = 0.2,
     gaussian_dropout: bool = False,
-    kernel_init="he_normal",
+    kernel_init='he_normal',
     l1rate: float = 0.001,
 ):
     mlp = Sequential()
@@ -49,36 +42,31 @@ def build_model(
     mlp.add(
         Dense(
             layers[0],
-            activation="linear",
+            activation='linear',
             kernel_initializer=kernel_init,
             input_shape=(n_features,),
             activity_regularizer=l1(l1rate),
-        )
-    )
-    mlp.add(Activation("relu"))
+        ))
+    mlp.add(Activation('relu'))
     if not gaussian_dropout:
         mlp.add(Dropout(dropout))
     else:
         mlp.add(GaussianDropout(dropout))
 
     for layer in layers[1:]:
-        mlp.add(
-            Dense(
-                layer,
-                activation="linear",
-                kernel_initializer=kernel_init,
-                activity_regularizer=l1(l1rate),
-            )
-        )
-        mlp.add(Activation("relu"))
+        mlp.add(Dense(
+            layer,
+            activation='linear',
+            kernel_initializer=kernel_init,
+            activity_regularizer=l1(l1rate),
+        ))
+        mlp.add(Activation('relu'))
         if not gaussian_dropout:
             mlp.add(Dropout(dropout))
         else:
             mlp.add(GaussianDropout(dropout))
 
-    mlp.add(
-        Dense(3, activation=mapping_to_target_range, kernel_initializer=kernel_init)
-    )
+    mlp.add(Dense(3, activation=mapping_to_target_range, kernel_initializer=kernel_init))
 
     return mlp
 
@@ -114,33 +102,27 @@ def train_model(  # pylint:disable=too-many-locals, too-many-arguments
 
     assert X_train.shape[1] == X_valid.shape[1]
 
-    logger.info("Will now start training.")
+    logger.info('Will now start training.')
 
     mlp.compile(
         optimizer=Adam(learning_rate=lr),
         loss=huber_fn,
-        metrics=["mae", "mean_absolute_percentage_error"],
+        metrics=['mae', 'mean_absolute_percentage_error'],
     )
 
     callbacks = []
 
     if isinstance(early_stopping, int):
-        callbacks.append(
-            EarlyStopping(
-                monitor="val_loss", patience=early_stopping, verbose=0, mode="auto"
-            )
-        )
+        callbacks.append(EarlyStopping(monitor='val_loss', patience=early_stopping, verbose=0, mode='auto'))
 
     if isinstance(reduce_lr, dict):
-        callbacks.append(
-            learning_rate_reduction=ReduceLROnPlateau(
-                monitor="val_loss",
-                patience=reduce_lr["patience"],
-                verbose=1,
-                factor=reduce_lr["factor"],
-                min_lr=reduce_lr["min_lr"],
-            )
-        )
+        callbacks.append(learning_rate_reduction=ReduceLROnPlateau(
+            monitor='val_loss',
+            patience=reduce_lr['patience'],
+            verbose=1,
+            factor=reduce_lr['factor'],
+            min_lr=reduce_lr['min_lr'],
+        ))
 
     with experiment.train():
         _ = mlp.fit(
