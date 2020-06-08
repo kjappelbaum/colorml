@@ -6,6 +6,7 @@ from glob import glob
 from pathlib import Path
 
 import numpy as np
+import openbabel as ob
 import pandas as pd
 import pybel
 from mofid.run_mofid import cif2mofid
@@ -27,7 +28,6 @@ def get_primitive(datapath, writepath):
 
 
 def openbabel_count_bond_order(mol, bo=2):
-    import openbabel as ob
 
     count = 0
     mole = mol.OBMol
@@ -53,8 +53,6 @@ def openbabel_count_aromatic_rings(mol):
 
 
 def openbabel_count_aromatic(mol):
-    import openbabel as ob
-
     carboncounter = 1
     double_cc = 1
     mole = mol.OBMol
@@ -73,8 +71,6 @@ def openbabel_count_aromatic(mol):
 
 
 def get_group_counts(mol):
-    import openbabel as ob
-
     mole = mol.OBMol
     group_dict = {
         'primary_amide': 0,
@@ -204,4 +200,4 @@ def get_color_descriptors(cif):
 
         return df_features
     except Exception:
-        raise FeaturizationException("Could not featurize the structure")
+        raise FeaturizationException('Could not featurize the structure')
