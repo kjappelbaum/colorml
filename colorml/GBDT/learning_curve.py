@@ -361,8 +361,8 @@ def process_data(augment=False, size: int = 500):
     X_train = df_train[CHEMICAL_FEATURES]
     X_test = df_test[CHEMICAL_FEATURES]
 
-    y_train = df_train[['r', 'g', 'b']] / 255
-    y_test = df_test[['r', 'g', 'b']] / 255
+    y_train = df_train[['r', 'g', 'b']].values / 255
+    y_test = df_test[['r', 'g', 'b']].values / 255
 
     scaler = StandardScaler()
     X_train = scaler.fit_transform(X_train)
@@ -382,28 +382,12 @@ def fit(x_train, y_train):
 def main():
     STARTTIME0 = time.strftime('run_%Y_%m_%d_%H_%M_%s')
     METRICS = []
-    for ts_size in [10, 100, 200, 500, 1000, 2000, 5000]:
+    for ts_size in [10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 5600]:
         for iteration in range(10):
             STARTTIME = STARTTIME0 + 'ts_' + str(ts_size) + '_iter_' + str(iteration)
-            scaler, _, X_train, X_test, y_train, y_test, df_test = process_data(ts_size)
-
-            joblib.dump(scaler, 'scaler_' + STARTTIME + '.joblib')
-
-            np.save('X_train_' + STARTTIME + '.npy', X_train)
-            np.save('X_test_' + STARTTIME + '.npy', X_test)
-            np.save('y_train_' + STARTTIME + '.npy', y_train)
-            np.save('y_test_' + STARTTIME + '.npy', y_test)
-            np.save('y_names_' + STARTTIME + '.npy', df_test['color_cleaned'])
+            scaler, _, X_train, X_test, y_train, y_test, df_test = process_data(size=ts_size)
 
             experiment = Experiment(api_key=os.environ['COMET_API_KEY'], project_name='color-ml')
-
-            experiment.log_asset('scaler_' + STARTTIME + '.joblib')
-
-            experiment.log_asset('X_train_' + STARTTIME + '.npy')
-            experiment.log_asset('X_test_' + STARTTIME + '.npy')
-            experiment.log_asset('y_train_' + STARTTIME + '.npy')
-            experiment.log_asset('y_test_' + STARTTIME + '.npy')
-            experiment.log_asset('y_names_' + STARTTIME + '.npy')
 
             experiment.log_parameters(PARAMETERS_MEDIAN)
 
@@ -415,8 +399,6 @@ def main():
             metrics_dict['ts_size'] = ts_size
 
             METRICS.append(metrics_dict)
-            joblib.dump(regressor_median, 'regressor_median' + STARTTIME + '.joblib')
-            experiment.log_asset('regressor_median' + STARTTIME + '.joblib')
 
     df = pd.DataFrame(METRICS)
     df.to_csv('learningurve_' + STARTTIME0 + '.csv')

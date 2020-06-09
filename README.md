@@ -20,6 +20,7 @@ The code defining the models that we explored, as well as some utility code, can
 - `make_prediction_plot.ipynb`: used to generate the model evaluation plots for the paper.
 - `summarize_metrics.ipynb`: comparing metrics of baseline models with those of the final model.
 - `getting_some_baseline.ipynb`: here, we create with some baseline dummy models
+- `plot_learning_curve.ipynb`: here, we plotted the learning curve
 
 ### Notebooks that are not directly pertinent to the main content of the paper
 
