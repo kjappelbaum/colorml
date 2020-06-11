@@ -10,11 +10,13 @@ import openbabel as ob
 import pandas as pd
 import pybel
 from mofid.run_mofid import cif2mofid
-from molSimplify.Informatics.MOF.MOF_descriptors import get_MOF_descriptors
 from pymatgen.io.cif import CifParser
 from six.moves import zip
 
-from ..utils.utils import make_temp_directory, temp
+# This code relies on my fork of molsimplify which outputs the sum and the average RACs
+from molSimplify.Informatics.MOF.MOF_descriptors import get_MOF_descriptors
+
+from ..utils import make_temp_directory, temp
 
 
 class FeaturizationException(Exception):
@@ -116,7 +118,9 @@ def get_molecular_descriptors(smiles):
 
 
 def get_smiles_features(cif):
-    mofid = cif2mofid(cif)
+    # make sure that the output is automatically deleted.
+    with make_temp_directory() as temp_dir:
+        mofid = cif2mofid(cif, temp_dir)
 
     name = mofid['cifname']
 
@@ -181,6 +185,15 @@ def get_racs(cif):
     df = pd.DataFrame(featurization_list)
     keep = [val for val in df.columns.values if ('mc' in val) or ('lc' in val) or ('f-lig' in val) or ('func' in val)]
     df = df[['filename'] + keep]
+
+    # Now, we need to employ a workaround because the feature names changed mc_CR -> mc with open sourcing the MOF RACs code
+    mc_features = [val for val in df.columns.values if 'mc' in val]
+    # if we use the old version, all should have CRY in name, in the new version no feature should have CRY in name
+    if not 'CRY' in mc_features[0]:
+        mc_features_new = [val.replace('mc', 'mc_CRY') for val in mc_features]
+        replacement_dict = dict(zip(mc_features, mc_features_new))
+        df.rename(columns=replacement_dict, inplace=True)
+    # need to generate sums and differences
     return df
 
 
@@ -199,5 +212,5 @@ def get_color_descriptors(cif):
         df_features = merge_racs_moldesc(moldesc, racs)
 
         return df_features
-    except Exception:
-        raise FeaturizationException('Could not featurize the structure')
+    except Exception as e:
+        raise FeaturizationException('Could not featurize the structure due to  {}'.format(e))

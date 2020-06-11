@@ -4,8 +4,6 @@ from __future__ import absolute_import
 import os
 import time
 
-import joblib
-import numpy as np
 import pandas as pd
 from comet_ml import Experiment
 from lightgbm import LGBMRegressor
@@ -14,10 +12,11 @@ from sklearn.multioutput import MultiOutputRegressor
 from sklearn.preprocessing import StandardScaler
 
 from ..utils.bootstrapped_metrics import get_metrics_dict
-from ..utils.descriptornames import *
 from ..utils.utils import augment_data, read_pickle
 
-# optimizer id 23b1617dc24a4fc48198650b1e4cc46f, took f46c00e7621147c7b129ff78e7ff4ad7 because the loss is here now greater than the stdev, which makes it seem more stable
+# optimizer id 23b1617dc24a4fc48198650b1e4cc46f,
+# took f46c00e7621147c7b129ff78e7ff4ad7 because the loss is here now greater than the stdev,
+# which makes it seem more stable
 PARAMETERS_01 = {
     'colsample_bytree': 0.20032975594543911,
     'max_depth': 30,
@@ -382,10 +381,9 @@ def fit(x_train, y_train):
 def main():
     STARTTIME0 = time.strftime('run_%Y_%m_%d_%H_%M_%s')
     METRICS = []
-    for ts_size in [10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 5600]:
+    for ts_size in [3000, 5000, 5600]:
         for iteration in range(10):
-            STARTTIME = STARTTIME0 + 'ts_' + str(ts_size) + '_iter_' + str(iteration)
-            scaler, _, X_train, X_test, y_train, y_test, df_test = process_data(size=ts_size)
+            _, _, X_train, X_test, y_train, y_test, _ = process_data(size=ts_size)
 
             experiment = Experiment(api_key=os.environ['COMET_API_KEY'], project_name='color-ml')
 

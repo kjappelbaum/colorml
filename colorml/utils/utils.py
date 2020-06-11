@@ -3,12 +3,9 @@
 from __future__ import absolute_import, print_function
 
 import collections
-import contextlib
 import os
 import pickle
 import random
-import shutil
-import tempfile
 import time
 from typing import Union
 
@@ -22,41 +19,18 @@ import tensorflow as tf
 from colormath.color_conversions import convert_color
 from colormath.color_diff import delta_e_cie2000
 from colormath.color_objects import LabColor, sRGBColor
-from comet_ml import Experiment
-from numpy.random import seed
 from scipy import stats
 from six.moves import range, zip
 from sklearn.metrics import mean_absolute_error, mean_squared_error
-from sklearn.preprocessing import StandardScaler
 from webcolors import rgb_to_hex
 
-from .descriptornames import *
+from .descriptornames import descriptor_dict
 
 
-@contextlib.contextmanager
-def make_temp_directory():
-    temp_dir = tempfile.mkdtemp()
-    try:
-        yield temp_dir
-    finally:
-        shutil.rmtree(temp_dir)
-
-
-@contextlib.contextmanager
-def temp(cleanup=True):
-    tmp = tempfile.NamedTemporaryFile(delete=False)
-    try:
-        yield tmp
-    finally:
-        tmp.close()  # closes the file, so we can right remove it
-        cleanup and os.remove(tmp.name)
-
-
-def augment_data(df, augment_dict, r_col='r', g_col='g', b_col='b', name_col='color_cleaned'):
-    df_ = df.copy()
+def augment_data(df, augment_dict, r_col='r', g_col='g', b_col='b', name_col='color_cleaned'):  # pylint:disable=too-many-arguments
 
     new_rows = []
-    for i, row in df.iterrows():
+    for _, row in df.iterrows():
         color = row[name_col]
         r_ = row.copy()
         for rgb in augment_dict[color]:
@@ -189,10 +163,11 @@ def plot_predictions(predictions, labels, names, sample=100, outname=None):
     predictions = [rgb_to_hex((int(c[0]), int(c[1]), int(c[2]))) for c in predictions]
     true = [rgb_to_hex((int(c[0]), int(c[1]), int(c[2]))) for c in labels]
 
-    for i in range(len(predictions)):
-        r1 = mpatch.Rectangle((0, i), 1, 1, color=predictions[i])
+    i = 0
+    for i, pred in enumerate(predictions):
+        r1 = mpatch.Rectangle((0, i), 1, 1, color=pred)
         r2 = mpatch.Rectangle((1, i), 1, 1, color=true[i])
-        txt = ax.text(2, i + 0.5, '  ' + names[i], va='center', fontsize=10)
+        _ = ax.text(2, i + 0.5, '  ' + names[i], va='center', fontsize=10)
 
         ax.add_patch(r1)
         ax.add_patch(r2)
@@ -247,16 +222,16 @@ def rgb_to_hex_round(c):
     return rgb_to_hex((int(c[0]), int(c[1]), int(c[2])))
 
 
-def plot_prediction_dist(
-    predictions_dist,
-    label_names,
-    label_dict: dict,
-    sample: int = 100,
-    outname: str = None,
-    centrality: str = 'median',
-    n_samples: int = 10,
-    width: float = 0.2,
-    figsize: tuple = (8, 16),
+def plot_prediction_dist_samples(  # pylint:disable=too-many-arguments, too-many-locals
+        predictions_dist,
+        label_names,
+        label_dict: dict,
+        sample: int = 100,
+        outname: str = None,
+        centrality: str = 'median',
+        n_samples: int = 10,
+        width: float = 0.2,
+        figsize: tuple = (8, 16),
 ):
     """Plot figure that compares color of predictions versus acutal colors.
 
@@ -292,8 +267,9 @@ def plot_prediction_dist(
         for color in label_names_set:
             label_centrality_dict[color] = np.mean(label_dict[color], axis=0)
 
-    for i in range(len(label_names)):
-        colorname = label_names[i]
+    i = 0
+    for i, colorname in enumerate(label_names):
+
         r1 = mpatch.Rectangle((0, i), 1, 1, color=rgb_to_hex_round(prediction_centrality[i]))
         r2 = mpatch.Rectangle((1, i), 1, 1, color=rgb_to_hex_round(label_centrality_dict[colorname]))
 
@@ -348,16 +324,16 @@ def plot_prediction_dist(
         fig.savefig(outname, bbox_inches='tight')
 
 
-def plot_prediction_dist(
-    predictions_01,
-    predictions_05,
-    predictions_09,
-    names,
-    label_dict: dict,
-    sample: int = 100,
-    outname: str = None,
-    width: float = 0.2,
-    figsize: tuple = (8, 16),
+def plot_prediction_dist(  # pylint:disable=too-many-arguments, too-many-locals
+        predictions_01,
+        predictions_05,
+        predictions_09,
+        names,
+        label_dict: dict,
+        sample: int = 100,
+        outname: str = None,
+        # width: float = 0.2,
+        figsize: tuple = (8, 16),
 ):
 
     fig = plt.figure(figsize=figsize)
@@ -390,17 +366,18 @@ def plot_prediction_dist(
         labels_05[name] = rgb_to_hex((int(p05[0]), int(p05[1]), int(p05[2])))
         labels_09[name] = rgb_to_hex((int(p09[0]), int(p09[1]), int(p09[2])))
 
+    i = 0
     # iterate over the materials
-    for i in range(len(predictions01)):
+    for i, pred01 in enumerate(predictions01):
         name = names[i]
-        r1 = mpatch.Rectangle((0, i), 0.2, 1, color=predictions01[i])
+        r1 = mpatch.Rectangle((0, i), 0.2, 1, color=pred01)
         r2 = mpatch.Rectangle((0.2, i), 0.2, 1, color=predictions09[i])
         r3 = mpatch.Rectangle((0.4, i), 0.4, 1, color=predictions05[i])
         r4 = mpatch.Rectangle((0.8, i), 0.4, 1, color=labels_05[name])
         r5 = mpatch.Rectangle((1.2, i), 0.2, 1, color=labels_09[name])
         r6 = mpatch.Rectangle((1.4, i), 0.2, 1, color=labels_01[name])
 
-        txt = ax.text(1.6, i + 0.5, '  ' + names[i], va='center', fontsize=10)
+        _ = ax.text(1.6, i + 0.5, '  ' + names[i], va='center', fontsize=10)
 
         for patch in [r1, r2, r3, r4, r5, r6]:
             ax.add_patch(patch)
@@ -445,9 +422,9 @@ def predict_with_uncertainty(mlp,
     """
     result = []
 
-    f = K.function([mlp.layers[0].input, K.learning_phase()], [mlp.layers[-1].output[:, :3]])
+    f = tf.function([mlp.layers[0].input, BK.learning_phase()], [mlp.layers[-1].output[:, :3]])
 
-    for i in range(n_iter):
+    for _ in range(n_iter):
         result.append(f([x, 1]))
 
     result = np.array(result)

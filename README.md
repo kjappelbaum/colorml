@@ -21,6 +21,7 @@ The code defining the models that we explored, as well as some utility code, can
 - `summarize_metrics.ipynb`: comparing metrics of baseline models with those of the final model.
 - `getting_some_baseline.ipynb`: here, we create with some baseline dummy models
 - `plot_learning_curve.ipynb`: here, we plotted the learning curve
+- `make_predictions_on_experimental_structures.ipynb`: here, we make the analysis on the experimental and hypothetical structures.
 
 ### Notebooks that are not directly pertinent to the main content of the paper
 
