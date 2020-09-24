@@ -1,0 +1,23 @@
+{
+    "root": "/Users/kevinmaikjablonka/Dropbox (LSMO)/proj75_mofcolor/ml",
+    "program": "xgboost_search_wb.py",
+    "git": {
+        "remote": "git@github.com:kjappelbaum/colorml.git",
+        "commit": "922a8696dedd62e0ad8a7741502eb19dee34d4fc"
+    },
+    "email": "kevin.jablonka@epfl.ch",
+    "startedAt": "2020-07-15T16:25:56.860934",
+    "host": "tsf-484-wpa-3-093.epfl.ch",
+    "username": "kevinmaikjablonka",
+    "executable": "/Users/kevinmaikjablonka/opt/miniconda3/envs/colorml2/bin/python",
+    "os": "Darwin-19.5.0-x86_64-i386-64bit",
+    "python": "3.7.6",
+    "cpu_count": 8,
+    "args": [],
+    "state": "finished",
+    "jobType": null,
+    "mode": "run",
+    "project": "colorml",
+    "heartbeatAt": "2020-07-15T16:26:49.336590",
+    "exitcode": 0
+}

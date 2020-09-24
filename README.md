@@ -1,6 +1,8 @@
-# Color ML
+# MOF Color ML
 
 This repository contains code on data that was used to build models that can predict the color of MOFs using ML techniques.
+
+Some files were moved in the cleanup process and paths within those files might be broken.
 
 ## Package
 
@@ -15,13 +17,21 @@ The code defining the models that we explored, as well as some utility code, can
 
 ## Notebooks
 
+The `legacy` folder contains notebooks that were used in the development but do not contain relevant results.
+
 - `survey_eda.ipynb`: exploratory data analysis of the survey results. We run the survey using the [colorjeopardy flask app](https://github.com/kjappelbaum/colorjeopardy). Technical details about the survey can be found there. In the notebook we also perfom comparision to the xkcd results and drop entries with a particularly short or long response time.
+- `color_csd_eda.ipynb`: counts the elemental distribution
 - `test_featurization_code.ipynb`: contains examples of how to use the featurization code (and how it will fail if the structure is disordered/contains clashing atoms)
 - `make_prediction_plot.ipynb`: used to generate the model evaluation plots for the paper.
 - `summarize_metrics.ipynb`: comparing metrics of baseline models with those of the final model.
 - `getting_some_baseline.ipynb`: here, we create with some baseline dummy models
 - `plot_learning_curve.ipynb`: here, we plotted the learning curve
 - `make_predictions_on_experimental_structures.ipynb`: here, we make the analysis on the experimental and hypothetical structures.
+- `number_modifiers_color.ipynb`: count how many modifiers like 'intense' dark 'light' are in the names
+- `feature_importance_analysis.ipynb`: do SHAP feature importance analysis
+- `check_if_mof_74_in_db.ipynb`: Delete structures from the dataset that are close to the test structures, see also `split_data_for_development_excluding_colors.ipynb`
+- `permutation_test.iynb`: Contains the permutation significance analysis of one model
+- `augmentation_effect.ipynb`: Analysis the effect of using all color labels from the survey
 
 ### Notebooks that are not directly pertinent to the main content of the paper
 
@@ -46,6 +56,7 @@ The code defining the models that we explored, as well as some utility code, can
 - `holdout_set.csv` and `development_set.csv` are the test and train set that we obtained with iterative stratification.
 - `diverse_set{,_2, _3000}.csv` are the diverse sets we utilized for initial explorations
 - the `case_studies` directory contains descriptors that we used for some of the case studies in the paper.
+- `color_threshold.pkl`: dictionary that contains the color names for different variance thresholds
 
 Unweighted mean/median refers to the fact that we perform simple averaging in RGB space without taking into account that the percepetion of the human eye does not vary uniformly within this space.
 

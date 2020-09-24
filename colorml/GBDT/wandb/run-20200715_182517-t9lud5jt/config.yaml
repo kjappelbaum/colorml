@@ -1,0 +1,33 @@
+wandb_version: 1
+
+_wandb:
+  desc: null
+  value:
+    cli_version: 0.9.3
+    is_jupyter_run: false
+    is_kaggle_kernel: false
+    python_version: 3.7.6
+colsample_bytree:
+  desc: null
+  value: 0.8006923598630357
+max_depth:
+  desc: null
+  value: 9
+min_child_weight:
+  desc: null
+  value: 0.0342410167533575
+n_estimators:
+  desc: null
+  value: 4864
+num_leaves:
+  desc: null
+  value: 100
+reg_alpha:
+  desc: null
+  value: 1.0240461742157116
+reg_lambda:
+  desc: null
+  value: 1.0635207776708875
+subsample:
+  desc: null
+  value: 0.6711960876743234

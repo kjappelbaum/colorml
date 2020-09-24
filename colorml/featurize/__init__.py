@@ -183,6 +183,7 @@ def get_racs(cif):
         featurization_list.append(featurization)
 
     df = pd.DataFrame(featurization_list)
+    print(df.columns.values)
     keep = [val for val in df.columns.values if ('mc' in val) or ('lc' in val) or ('f-lig' in val) or ('func' in val)]
     df = df[['filename'] + keep]
 

@@ -116,7 +116,7 @@ def keras_fmin_fnct(space):
         X_train,
         Y_train,
         callbacks=callbacks,
-        epochs=100,
+        epoch=100,
         batch_size=space['batch_size'],
         validation_data=(X_test, Y_test),
     )

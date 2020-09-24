@@ -74,7 +74,7 @@ def get_timestamp_string():
 
 
 def colordistance(rgb1, rgb2):
-    '''d = {} distance between two colors(3)'''
+    """d = {} distance between two colors(3)"""
     rm = 0.5 * (rgb1[0] + rgb2[0])
     d = np.sum((2 + rm, 4, 3 - rm) * (rgb1 - rgb2)**2)**0.5
     return d
@@ -96,13 +96,22 @@ def get_delta_e(rgba, rgbb, upscaled=False):
     return delta_e
 
 
-def pairwise_delta_es(test, prediction):
+def pairwise_delta_es(test, prediction, upscaled=False):
     differences = []
 
     for ca, cb in zip(test, prediction):
-        differences.append(get_delta_e(ca, cb))
+        differences.append(get_delta_e(ca, cb, upscaled=upscaled))
 
     return differences
+
+
+def delta_e_deviation(colors: list, upscaled: bool = False):
+    color_array = np.array(colors)
+    mean_color = color_array.mean(axis=0)
+
+    distances = np.array([get_delta_e(color, mean_color, upscaled) for color in color_array])
+    sum_squares = np.sum(np.square(distances))
+    return np.sqrt(sum_squares) / (len(colors) - 1)
 
 
 def mapping_to_target_range(x, target_min=0, target_max=1):
@@ -153,7 +162,7 @@ def plot_predictions(predictions, labels, names, sample=100, outname=None):
         sample {int} -- how many samples to plot (default: {100})
         outname {string} -- path to which figure is saved (default: {None})
     """
-    fig = plt.figure(figsize=[4.8, 16])
+    fig = plt.figure(figsize=[8, 22])
     ax = fig.add_axes([0, 0, 1, 1])
 
     predictions = predictions[:sample]
@@ -167,7 +176,7 @@ def plot_predictions(predictions, labels, names, sample=100, outname=None):
     for i, pred in enumerate(predictions):
         r1 = mpatch.Rectangle((0, i), 1, 1, color=pred)
         r2 = mpatch.Rectangle((1, i), 1, 1, color=true[i])
-        _ = ax.text(2, i + 0.5, '  ' + names[i], va='center', fontsize=10)
+        _ = ax.text(2, i + 0.5, '  ' + names[i], va='center', fontsize=7)
 
         ax.add_patch(r1)
         ax.add_patch(r2)
@@ -223,15 +232,15 @@ def rgb_to_hex_round(c):
 
 
 def plot_prediction_dist_samples(  # pylint:disable=too-many-arguments, too-many-locals
-        predictions_dist,
-        label_names,
-        label_dict: dict,
-        sample: int = 100,
-        outname: str = None,
-        centrality: str = 'median',
-        n_samples: int = 10,
-        width: float = 0.2,
-        figsize: tuple = (8, 16),
+    predictions_dist,
+    label_names,
+    label_dict: dict,
+    sample: int = 100,
+    outname: str = None,
+    centrality: str = 'median',
+    n_samples: int = 10,
+    width: float = 0.2,
+    figsize: tuple = (8, 16),
 ):
     """Plot figure that compares color of predictions versus acutal colors.
 
@@ -325,15 +334,15 @@ def plot_prediction_dist_samples(  # pylint:disable=too-many-arguments, too-many
 
 
 def plot_prediction_dist(  # pylint:disable=too-many-arguments, too-many-locals
-        predictions_01,
-        predictions_05,
-        predictions_09,
-        names,
-        label_dict: dict,
-        sample: int = 100,
-        outname: str = None,
-        # width: float = 0.2,
-        figsize: tuple = (8, 16),
+    predictions_01,
+    predictions_05,
+    predictions_09,
+    names,
+    label_dict: dict,
+    sample: int = 100,
+    outname: str = None,
+    # width: float = 0.2,
+    figsize: tuple = (8, 16),
 ):
 
     fig = plt.figure(figsize=figsize)

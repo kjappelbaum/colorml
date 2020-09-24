@@ -2,83 +2,71 @@
 from __future__ import absolute_import
 
 import os
+import pickle
 import time
 
+import click
 import joblib
 import numpy as np
 import pandas as pd
-from comet_ml import Experiment
 from lightgbm import LGBMRegressor
+from six.moves import range
+from sklearn.ensemble import BaggingRegressor
 from sklearn.feature_selection import RFECV, VarianceThreshold
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.multioutput import MultiOutputRegressor
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import RobustScaler, StandardScaler
 from xgboost import XGBRegressor
 
+import wandb
+
 from ..utils.descriptornames import *
-from ..utils.utils import augment_data, plot_predictions, read_pickle
+from ..utils.utils import (augment_data, pairwise_delta_es, plot_predictions, read_pickle)
 
-# optimizer id 23b1617dc24a4fc48198650b1e4cc46f, took f46c00e7621147c7b129ff78e7ff4ad7 because the loss is here now greater than the stdev, which makes it seem more stable
-PARAMETERS_01 = {
-    'colsample_bytree': 0.20032975594543911,
-    'max_depth': 30,
-    'min_child_weight': 0.004286551076851089,
-    'n_estimators': 1093,
-    'num_leaves': 423,
-    'reg_alpha': 1.520322189905922e-4,
-    'reg_lambda': 0.056600636753530116,
-    'subsample': 0.2339942750715971,
-}
+with open(
+        '/Users/kevinmaikjablonka/Dropbox (LSMO)/proj75_mofcolor/ml/data/color_threshold.pkl',
+        'rb',
+) as fh:
+    color_threshold_dict = pickle.load(fh)
 
-# optimizer id 11b4e66179b0472a8460e53918dbd5ec, parameters from bb425c091cf64643a932bac757d6a939
+# upbeat-sweep-85 #volcanic-sweep-182 #proud-sweep-227
 PARAMETERS_MEDIAN = {
-    'colsample_bytree': 0.680864608679754,
-    'max_depth': 49,
-    'min_child_weight': 0.018165986208942688,
-    'n_estimators': 2072,
-    'num_leaves': 314,
-    'reg_alpha': 0.013653685526724718,
-    'reg_lambda': 4.720279281103699e-5,
-    'subsample': 0.5006617953729169,
+    'colsample_bytree': 0.5341,
+    'max_depth': 33,
+    'min_child_weight': 0.001713,
+    'n_estimators': 3650,
+    'num_leaves': 16,
+    'reg_alpha': 1.361,
+    'reg_lambda': 1.484,
+    'subsample': 0.2767,
 }
 
-# https://www.comet.ml/kjappelbaum/color-ml/6c50e8f8c95d4c0687f1ae0e282aa4c3?experiment-tab=params
-PARAMETERS_MEAN = {
-    'colsample_bytree': 0.744316160646511,
-    'max_depth': 29,
-    'min_child_weight': 0.07866198408520107,
-    'n_estimators': 401,
-    'num_leaves': 212,
-    'reg_alpha': 2.891056990373021E-4,
-    'reg_lambda': 0.018399475060451708,
-    'subsample': 0.5969927763050189,
+# amber-sweep-132 #dark-sweep-916
+PARAMETERS_01 = {
+    'colsample_bytree': 0.04045,
+    'max_depth': 22,
+    'min_child_weight': 0.008584,
+    'n_estimators': 16,
+    'num_leaves': 268,
+    'reg_alpha': 1.279,
+    'reg_lambda': 1.349,
+    'subsample': 0.8936,
 }
 
-# optimizer id b1941f3a465b4f1bb14dce011cf04e66
-# 59f42095ba82475a9f4a1235a02f1ff0
+# driven-sweep-41
 PARAMETERS_09 = {
-    'colsample_bytree': 0.32832464825089663,
-    'max_depth': 50,
-    'min_child_weight': 0.012100999863286296,
-    'n_estimators': 4984,
-    'num_leaves': 494,
-    'reg_alpha': 0.0012025842152723375,
-    'reg_lambda': 7.873746383882854E-5,
-    'subsample': 0.7274910185249528,
+    'colsample_bytree': 0.3349,
+    'max_depth': 44,
+    'min_child_weight': 0.06702,
+    'n_estimators': 4875,
+    'num_leaves': 285,
+    'reg_alpha': 1.107,
+    'reg_lambda': 1.051,
+    'subsample': 0.9687,
 }
 
-RANDOM_SEED = int(84996)
-
-# CHEMICAL_FEATURES = (
-#     metalcenter_descriptors
-#     + functionalgroup_descriptors
-#     + linker_descriptors
-#     + mol_desc
-#     + summed_functionalgroup_descriptors
-#     + summed_linker_descriptors
-#     + summed_metalcenter_descriptors
-# )
+RANDOM_SEED = int(20021994)
 
 CHEMICAL_FEATURES = [
     'mc_CRY-chi-0-all',
@@ -215,139 +203,188 @@ CHEMICAL_FEATURES = [
     'aromatic_rings_mean',
     'dbonds_mean',
     'abonds_mean',
-    'sum-func-chi-0-all',
-    'sum-func-chi-1-all',
-    'sum-func-chi-2-all',
-    'sum-func-chi-3-all',
-    'sum-func-Z-0-all',
-    'sum-func-Z-1-all',
-    'sum-func-Z-2-all',
-    'sum-func-Z-3-all',
-    'sum-func-I-0-all',
-    'sum-func-I-1-all',
-    'sum-func-I-2-all',
-    'sum-func-I-3-all',
-    'sum-func-T-0-all',
-    'sum-func-T-1-all',
-    'sum-func-T-2-all',
-    'sum-func-T-3-all',
-    'sum-func-S-0-all',
-    'sum-func-S-1-all',
-    'sum-func-S-2-all',
-    'sum-func-S-3-all',
-    'sum-func-alpha-0-all',
-    'sum-func-alpha-1-all',
-    'sum-func-alpha-2-all',
-    'sum-func-alpha-3-all',
-    'sum-D_func-chi-1-all',
-    'sum-D_func-chi-2-all',
-    'sum-D_func-chi-3-all',
-    'sum-D_func-Z-1-all',
-    'sum-D_func-Z-2-all',
-    'sum-D_func-Z-3-all',
-    'sum-D_func-T-1-all',
-    'sum-D_func-T-2-all',
-    'sum-D_func-T-3-all',
-    'sum-D_func-S-1-all',
-    'sum-D_func-S-2-all',
-    'sum-D_func-S-3-all',
-    'sum-D_func-alpha-1-all',
-    'sum-D_func-alpha-2-all',
-    'sum-D_func-alpha-3-all',
-    'sum-f-lig-chi-0',
-    'sum-f-lig-chi-1',
-    'sum-f-lig-chi-2',
-    'sum-f-lig-chi-3',
-    'sum-f-lig-Z-0',
-    'sum-f-lig-Z-1',
-    'sum-f-lig-Z-2',
-    'sum-f-lig-Z-3',
-    'sum-f-lig-I-0',
-    'sum-f-lig-I-1',
-    'sum-f-lig-I-2',
-    'sum-f-lig-I-3',
-    'sum-f-lig-T-0',
-    'sum-f-lig-T-1',
-    'sum-f-lig-T-2',
-    'sum-f-lig-T-3',
-    'sum-f-lig-S-0',
-    'sum-f-lig-S-1',
-    'sum-f-lig-S-2',
-    'sum-f-lig-S-3',
-    'sum-lc-chi-0-all',
-    'sum-lc-chi-1-all',
-    'sum-lc-chi-2-all',
-    'sum-lc-chi-3-all',
-    'sum-lc-Z-0-all',
-    'sum-lc-Z-1-all',
-    'sum-lc-Z-2-all',
-    'sum-lc-Z-3-all',
-    'sum-lc-I-0-all',
-    'sum-lc-I-1-all',
-    'sum-lc-I-2-all',
-    'sum-lc-I-3-all',
-    'sum-lc-T-0-all',
-    'sum-lc-T-1-all',
-    'sum-lc-T-2-all',
-    'sum-lc-T-3-all',
-    'sum-lc-S-0-all',
-    'sum-lc-S-1-all',
-    'sum-lc-S-2-all',
-    'sum-lc-S-3-all',
-    'sum-lc-alpha-0-all',
-    'sum-lc-alpha-1-all',
-    'sum-lc-alpha-2-all',
-    'sum-lc-alpha-3-all',
-    'sum-D_lc-chi-1-all',
-    'sum-D_lc-chi-2-all',
-    'sum-D_lc-chi-3-all',
-    'sum-D_lc-Z-1-all',
-    'sum-D_lc-Z-2-all',
-    'sum-D_lc-Z-3-all',
-    'sum-D_lc-T-1-all',
-    'sum-D_lc-T-2-all',
-    'sum-D_lc-T-3-all',
-    'sum-D_lc-S-1-all',
-    'sum-D_lc-S-2-all',
-    'sum-D_lc-S-3-all',
-    'sum-D_lc-alpha-1-all',
-    'sum-D_lc-alpha-2-all',
-    'sum-D_lc-alpha-3-all',
-    'sum-mc_CRY-chi-0-all',
-    'sum-mc_CRY-chi-1-all',
-    'sum-mc_CRY-chi-2-all',
-    'sum-mc_CRY-chi-3-all',
-    'sum-mc_CRY-Z-0-all',
-    'sum-mc_CRY-Z-1-all',
-    'sum-mc_CRY-Z-2-all',
-    'sum-mc_CRY-Z-3-all',
-    'sum-mc_CRY-I-0-all',
-    'sum-mc_CRY-I-1-all',
-    'sum-mc_CRY-I-2-all',
-    'sum-mc_CRY-I-3-all',
-    'sum-mc_CRY-T-0-all',
-    'sum-mc_CRY-T-1-all',
-    'sum-mc_CRY-T-2-all',
-    'sum-mc_CRY-T-3-all',
-    'sum-mc_CRY-S-0-all',
-    'sum-mc_CRY-S-1-all',
-    'sum-mc_CRY-S-2-all',
-    'sum-mc_CRY-S-3-all',
-    'sum-D_mc_CRY-chi-1-all',
-    'sum-D_mc_CRY-chi-2-all',
-    'sum-D_mc_CRY-chi-3-all',
-    'sum-D_mc_CRY-Z-1-all',
-    'sum-D_mc_CRY-Z-2-all',
-    'sum-D_mc_CRY-Z-3-all',
-    'sum-D_mc_CRY-T-1-all',
-    'sum-D_mc_CRY-T-2-all',
-    'sum-D_mc_CRY-T-3-all',
-    'sum-D_mc_CRY-S-1-all',
-    'sum-D_mc_CRY-S-2-all',
-    'sum-D_mc_CRY-S-3-all',
+    # "sum-func-chi-0-all",
+    # "sum-func-chi-1-all",
+    # "sum-func-chi-2-all",
+    # "sum-func-chi-3-all",
+    # "sum-func-Z-0-all",
+    # "sum-func-Z-1-all",
+    # "sum-func-Z-2-all",
+    # "sum-func-Z-3-all",
+    # "sum-func-I-0-all",
+    # "sum-func-I-1-all",
+    # "sum-func-I-2-all",
+    # "sum-func-I-3-all",
+    # "sum-func-T-0-all",
+    # "sum-func-T-1-all",
+    # "sum-func-T-2-all",
+    # "sum-func-T-3-all",
+    # "sum-func-S-0-all",
+    # "sum-func-S-1-all",
+    # "sum-func-S-2-all",
+    # "sum-func-S-3-all",
+    # "sum-func-alpha-0-all",
+    # "sum-func-alpha-1-all",
+    # "sum-func-alpha-2-all",
+    # "sum-func-alpha-3-all",
+    # "sum-D_func-chi-1-all",
+    # "sum-D_func-chi-2-all",
+    # "sum-D_func-chi-3-all",
+    # "sum-D_func-Z-1-all",
+    # "sum-D_func-Z-2-all",
+    # "sum-D_func-Z-3-all",
+    # "sum-D_func-T-1-all",
+    # "sum-D_func-T-2-all",
+    # "sum-D_func-T-3-all",
+    # "sum-D_func-S-1-all",
+    # "sum-D_func-S-2-all",
+    # "sum-D_func-S-3-all",
+    # "sum-D_func-alpha-1-all",
+    # "sum-D_func-alpha-2-all",
+    # "sum-D_func-alpha-3-all",
+    # "sum-f-lig-chi-0",
+    # "sum-f-lig-chi-1",
+    # "sum-f-lig-chi-2",
+    # "sum-f-lig-chi-3",
+    # "sum-f-lig-Z-0",
+    # "sum-f-lig-Z-1",
+    # "sum-f-lig-Z-2",
+    # "sum-f-lig-Z-3",
+    # "sum-f-lig-I-0",
+    # "sum-f-lig-I-1",
+    # "sum-f-lig-I-2",
+    # "sum-f-lig-I-3",
+    # "sum-f-lig-T-0",
+    # "sum-f-lig-T-1",
+    # "sum-f-lig-T-2",
+    # "sum-f-lig-T-3",
+    # "sum-f-lig-S-0",
+    # "sum-f-lig-S-1",
+    # "sum-f-lig-S-2",
+    # "sum-f-lig-S-3",
+    # "sum-lc-chi-0-all",
+    # "sum-lc-chi-1-all",
+    # "sum-lc-chi-2-all",
+    # "sum-lc-chi-3-all",
+    # "sum-lc-Z-0-all",
+    # "sum-lc-Z-1-all",
+    # "sum-lc-Z-2-all",
+    # "sum-lc-Z-3-all",
+    # "sum-lc-I-0-all",
+    # "sum-lc-I-1-all",
+    # "sum-lc-I-2-all",
+    # "sum-lc-I-3-all",
+    # "sum-lc-T-0-all",
+    # "sum-lc-T-1-all",
+    # "sum-lc-T-2-all",
+    # "sum-lc-T-3-all",
+    # "sum-lc-S-0-all",
+    # "sum-lc-S-1-all",
+    # "sum-lc-S-2-all",
+    # "sum-lc-S-3-all",
+    # "sum-lc-alpha-0-all",
+    # "sum-lc-alpha-1-all",
+    # "sum-lc-alpha-2-all",
+    # "sum-lc-alpha-3-all",
+    # "sum-D_lc-chi-1-all",
+    # "sum-D_lc-chi-2-all",
+    # "sum-D_lc-chi-3-all",
+    # "sum-D_lc-Z-1-all",
+    # "sum-D_lc-Z-2-all",
+    # "sum-D_lc-Z-3-all",
+    # "sum-D_lc-T-1-all",
+    # "sum-D_lc-T-2-all",
+    # "sum-D_lc-T-3-all",
+    # "sum-D_lc-S-1-all",
+    # "sum-D_lc-S-2-all",
+    # "sum-D_lc-S-3-all",
+    # "sum-D_lc-alpha-1-all",
+    # "sum-D_lc-alpha-2-all",
+    # "sum-D_lc-alpha-3-all",
+    # "sum-mc_CRY-chi-0-all",
+    # "sum-mc_CRY-chi-1-all",
+    # "sum-mc_CRY-chi-2-all",
+    # "sum-mc_CRY-chi-3-all",
+    # "sum-mc_CRY-Z-0-all",
+    # "sum-mc_CRY-Z-1-all",
+    # "sum-mc_CRY-Z-2-all",
+    # "sum-mc_CRY-Z-3-all",
+    # "sum-mc_CRY-I-0-all",
+    # "sum-mc_CRY-I-1-all",
+    # "sum-mc_CRY-I-2-all",
+    # "sum-mc_CRY-I-3-all",
+    # "sum-mc_CRY-T-0-all",
+    # "sum-mc_CRY-T-1-all",
+    # "sum-mc_CRY-T-2-all",
+    # "sum-mc_CRY-T-3-all",
+    # "sum-mc_CRY-S-0-all",
+    # "sum-mc_CRY-S-1-all",
+    # "sum-mc_CRY-S-2-all",
+    # "sum-mc_CRY-S-3-all",
+    # "sum-D_mc_CRY-chi-1-all",
+    # "sum-D_mc_CRY-chi-2-all",
+    # "sum-D_mc_CRY-chi-3-all",
+    # "sum-D_mc_CRY-Z-1-all",
+    # "sum-D_mc_CRY-Z-2-all",
+    # "sum-D_mc_CRY-Z-3-all",
+    # "sum-D_mc_CRY-T-1-all",
+    # "sum-D_mc_CRY-T-2-all",
+    # "sum-D_mc_CRY-T-3-all",
+    # "sum-D_mc_CRY-S-1-all",
+    # "sum-D_mc_CRY-S-2-all",
+    # "sum-D_mc_CRY-S-3-all",
 ]
 
 AUGMENT_DICT = ('/Users/kevinmaikjablonka/Dropbox (LSMO)/proj75_mofcolor/ml/data/augment_dict.pkl')
+
+
+def split_data(threshold):
+    from iterstrat.ml_stratifiers import MultilabelStratifiedShuffleSplit
+
+    df = pd.read_csv('/Users/kevinmaikjablonka/Dropbox (LSMO)/proj75_mofcolor/ml/data/all.csv')
+    exlcuded = []
+    keept = []
+
+    THRESHOLD = 0.03
+
+    if threshold != 255:
+        for i, row in df.iterrows():
+            if row['color_cleaned_x'] in color_threshold_dict[threshold]:
+                keept.append(row)
+            else:
+                exlcuded.append(row)
+        df_rel = pd.DataFrame(keept)
+        df = df_rel.drop_duplicates(subset=CHEMICAL_FEATURES)
+    else:
+        df = df.drop_duplicates(subset=CHEMICAL_FEATURES)
+    r_binned = bin_column(df['r'].values)
+    g_binned = bin_column(df['g'].values)
+    b_binned = bin_column(df['b'].values)
+    mlss = MultilabelStratifiedShuffleSplit(n_splits=1, train_size=0.85, test_size=0.15, random_state=RANDOM_SEED)
+    for train_idx, test_idx in mlss.split(df, np.hstack([r_binned, g_binned, b_binned])):
+        pass
+    df_train = df.iloc[train_idx].sample(len(train_idx))
+    df_test = df.iloc[test_idx].sample(len(test_idx))
+    df_train.to_csv(
+        '/Users/kevinmaikjablonka/Dropbox (LSMO)/proj75_mofcolor/ml/data/development_set.csv',
+        index=False,
+    )
+    df_test.to_csv(
+        '/Users/kevinmaikjablonka/Dropbox (LSMO)/proj75_mofcolor/ml/data/holdout_set.csv',
+        index=False,
+    )
+
+
+def bin_column(column):
+    binned = []
+    for value in column:
+        if value < 85:
+            binned.append(0)
+        elif 85 <= value < 170:
+            binned.append(1)
+        else:
+            binned.append(2)
+    return np.array(binned).reshape(-1, 1)
 
 
 def process_data(augment=False):
@@ -356,7 +393,7 @@ def process_data(augment=False):
 
     if augment:
         augment_dict = read_pickle(AUGMENT_DICT)
-        df_train = augment_data(df_train, augment_dict)
+        df_train = augment_data(df_train, augment_dict, name_col='color_cleaned_x')
 
     X_train = df_train[CHEMICAL_FEATURES]
     X_test = df_test[CHEMICAL_FEATURES]
@@ -372,110 +409,117 @@ def process_data(augment=False):
 
 
 def fit(x_train, y_train, parameters_01, parameters_median, parameters_09):
-    regressor_mean = MultiOutputRegressor(LGBMRegressor(**parameters_median))
-    regressor_mean.fit(x_train, y_train)
-
-    regressor_median = MultiOutputRegressor(LGBMRegressor(objective='quantile', alpha=0.5, **parameters_median))
+    regressor_median = BaggingRegressor(MultiOutputRegressor(
+        LGBMRegressor(objective='quantile', alpha=0.5, **parameters_median)),
+                                        n_jobs=-1,
+                                        n_estimators=15)
     regressor_median.fit(x_train, y_train)
 
     regressor_0_1 = MultiOutputRegressor(LGBMRegressor(objective='quantile', alpha=0.1, **parameters_01))
     regressor_0_1.fit(x_train, y_train)
 
     regressor_0_9 = MultiOutputRegressor(LGBMRegressor(objective='quantile', alpha=0.9, **parameters_09))
+
     regressor_0_9.fit(x_train, y_train)
 
-    return regressor_mean, regressor_median, regressor_0_1, regressor_0_9
+    return regressor_median, regressor_0_1, regressor_0_9
 
 
-def main():
-    STARTTIME = time.strftime('run_%Y_%m_%d_%H_%M_%s')
-    scaler, yscaler, X_train, X_test, y_train, y_test, df_test = process_data()
+@click.command('cli')
+@click.option('--augment', is_flag=True)
+@click.argument('repeats', type=int, default=1)
+@click.argument('threshold', type=int, default=16)
+def main(augment, repeats, threshold):
+    delta_es = []
+    # delta_es_test = []
+    # df_test_all = pd.read_csv("/Users/kevinmaikjablonka/Dropbox (LSMO)/proj75_mofcolor/ml/data/to_sample_from_test.csv")
+    # X_test_all = df_test_all[CHEMICAL_FEATURES]
 
-    joblib.dump(scaler, 'scaler_' + STARTTIME + '.joblib')
+    # y_test_all = df_test_all[["r", "g", "b"]].values / 255
 
-    np.save('X_train_' + STARTTIME + '.npy', X_train)
-    np.save('X_test_' + STARTTIME + '.npy', X_test)
-    np.save('y_train_' + STARTTIME + '.npy', y_train)
-    np.save('y_test_' + STARTTIME + '.npy', y_test)
-    np.save('y_names_' + STARTTIME + '.npy', df_test['color_cleaned'])
+    for i in range(repeats):
+        STARTTIME = time.strftime('run_%Y_%m_%d_%H_%M_%s')
+        split_data(threshold)
+        scaler, yscaler, X_train, X_test, y_train, y_test, df_test = process_data(augment)
 
-    experiment = Experiment(api_key=os.environ['COMET_API_KEY'], project_name='color-ml')
+        joblib.dump(scaler, 'scaler_' + STARTTIME + '.joblib')
 
-    experiment.log_asset('scaler_' + STARTTIME + '.joblib')
+        np.save('X_train_' + STARTTIME + '.npy', X_train)
+        np.save('X_test_' + STARTTIME + '.npy', X_test)
+        np.save('y_train_' + STARTTIME + '.npy', y_train)
+        np.save('y_test_' + STARTTIME + '.npy', y_test)
+        np.save('y_names_' + STARTTIME + '.npy', df_test['color_cleaned_x'])
 
-    experiment.log_asset('X_train_' + STARTTIME + '.npy')
-    experiment.log_asset('X_test_' + STARTTIME + '.npy')
-    experiment.log_asset('y_train_' + STARTTIME + '.npy')
-    experiment.log_asset('y_test_' + STARTTIME + '.npy')
-    experiment.log_asset('y_names_' + STARTTIME + '.npy')
+        wandb.save('scaler_' + STARTTIME + '.joblib')
 
-    experiment.log_parameters(PARAMETERS_01)
-    experiment.log_parameters(PARAMETERS_MEDIAN)
-    experiment.log_parameters(PARAMETERS_09)
+        wandb.save('X_train_' + STARTTIME + '.npy')
+        wandb.save('X_test_' + STARTTIME + '.npy')
+        wandb.save('y_train_' + STARTTIME + '.npy')
+        wandb.save('y_test_' + STARTTIME + '.npy')
+        wandb.save('y_names_' + STARTTIME + '.npy')
 
-    with experiment.train():
-        regressor_mean, regressor_median, regressor_0_1, regressor_0_9 = fit(X_train, y_train, PARAMETERS_01,
-                                                                             PARAMETERS_MEDIAN, PARAMETERS_09)
+        regressor_median, regressor_0_1, regressor_0_9 = fit(X_train, y_train, PARAMETERS_01, PARAMETERS_MEDIAN,
+                                                             PARAMETERS_09)
 
-    joblib.dump(regressor_mean, 'regressor_mean' + STARTTIME + '.joblib')
-    joblib.dump(regressor_median, 'regressor_median' + STARTTIME + '.joblib')
-    joblib.dump(regressor_0_1, 'regressor_0_1' + STARTTIME + '.joblib')
-    joblib.dump(regressor_0_9, 'regressor_0_9' + STARTTIME + '.joblib')
+        joblib.dump(regressor_median, 'regressor_median' + STARTTIME + str(augment) + '.joblib', compress=3)
+        joblib.dump(regressor_0_1, 'regressor_0_1' + STARTTIME + str(augment) + '.joblib', compress=3)
+        joblib.dump(regressor_0_9, 'regressor_0_9' + STARTTIME + str(augment) + '.joblib', compress=3)
 
-    experiment.log_asset('regressor_mean' + STARTTIME + '.joblib')
-    experiment.log_asset('regressor_median' + STARTTIME + '.joblib')
-    experiment.log_asset('regressor_0_1' + STARTTIME + '.joblib')
-    experiment.log_asset('regressor_0_9' + STARTTIME + '.joblib')
-
-    with experiment.test():
-        mean_predict = regressor_mean.predict(X_test)
-        r2 = r2_score(y_test, mean_predict)
-        mae = mean_absolute_error(y_test, mean_predict)
-        mse = mean_squared_error(y_test, mean_predict)
-
-        experiment.log_metric('r2_score', r2)
-        experiment.log_metric('mae', mae)
-        experiment.log_metric('mse', mse)
-
-        plot_predictions(
-            mean_predict * 255,
-            y_test * 255,
-            df_test['color_cleaned'].values,
-            outname='mean_' + STARTTIME + '.png',
-        )
-        experiment.log_image('mean_' + STARTTIME + '.png')
+        # wandb.save("regressor_median" + STARTTIME + str(augment) + ".joblib")
+        # wandb.save("regressor_0_1" + STARTTIME + str(augment) + ".joblib")
+        # wandb.save("regressor_0_9" + STARTTIME + str(augment) + ".joblib")
 
         median_predict = regressor_median.predict(X_test)
 
         plot_predictions(
             median_predict * 255,
             y_test * 255,
-            df_test['color_cleaned'].values,
-            outname='median_' + STARTTIME + '.png',
+            df_test['color_cleaned_x'].values,
+            outname='median_' + STARTTIME + str(augment) + '.png',
         )
 
-        experiment.log_image('median_' + STARTTIME + '.png')
+        differences = pairwise_delta_es(y_test, median_predict)
+        delta_es.append(differences)
+
+        # median_predict = regressor_median.predict(X_test_all)
+
+        # plot_predictions(
+        #     median_predict * 255,
+        #     y_test * 255,
+        #     df_test["color_cleaned_x"].values,
+        #     outname="median_" + STARTTIME + str(augment) + ".png",
+        # )
+
+        # differences = pairwise_delta_es(y_test_all, median_predict)
+        # delta_es_test.append(differences)
+
+        # wandb.log({"example": wandb.Image("median_" + STARTTIME + str(augment) + ".png")})
 
         r_0_1_predict = regressor_0_1.predict(X_test)
 
         plot_predictions(
             r_0_1_predict * 255,
             y_test * 255,
-            df_test['color_cleaned'].values,
-            outname='quantile_0_1_' + STARTTIME + '.png',
+            df_test['color_cleaned_x'].values,
+            outname='quantile_0_1_' + STARTTIME + str(augment) + '.png',
         )
-        experiment.log_image('quantile_0_1_' + STARTTIME + '.png')
+        wandb.log({'example': wandb.Image('quantile_0_1_' + STARTTIME + str(augment) + '.png')})
 
         r_0_9_predict = regressor_0_9.predict(X_test)
 
         plot_predictions(
             r_0_9_predict * 255,
             y_test * 255,
-            df_test['color_cleaned'].values,
-            outname='quantile_0_9_' + STARTTIME + '.png',
+            df_test['color_cleaned_x'].values,
+            outname='quantile_0_9_' + STARTTIME + str(augment) + '.png',
         )
-        experiment.log_image('quantile_0_9_' + STARTTIME + '.png')
+
+        wandb.log({'example': wandb.Image('quantile_0_9_' + STARTTIME + str(augment) + '.png')})
+
+    np.save('delta_e_{}_{}'.format(STARTTIME, str(augment)), delta_es)
+    # np.save("delta_e_{}_{}_test".format(STARTTIME, str(augment)), delta_es_test)
 
 
 if __name__ == '__main__':
+    wandb.init(project='colorml')
     main()
