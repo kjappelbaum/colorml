@@ -1,6 +1,12 @@
 # MOF Color ML
 
-This repository contains code on data that was used to build models that can predict the color of MOFs using ML techniques.
+This repository contains code on data that was used to build models that can predict the color of MOFs using ML techniques. See the [preprint](https://chemrxiv.org/articles/preprint/A_Data-Driven_Perspective_on_the_Colours_of_Metal-Organic_Frameworks/13033217) for more details.
+
+## Related repositories
+
+- [The tool that was used to conduct the survey](https://github.com/kjappelbaum/colorjeopardy)
+- [The results of the survey](https://zenodo.org/record/3831845)
+- [A web app that uses the model](https://github.com/kjappelbaum/mofcolorizer) with is deployed at https://go.epfl.ch/mofcolorizer
 
 Some files were moved in the cleanup process and paths within those files might be broken.
 
